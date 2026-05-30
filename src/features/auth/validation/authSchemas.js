@@ -169,7 +169,7 @@ export const resetPasswordSchema = z
 
 export const changePasswordSchema = z
   .object({
-    currentPassword: loginPasswordSchema,
+    currentPassword: z.string().optional().or(z.literal("")),
     newPassword: registerPasswordSchema,
     confirmPassword: confirmPasswordSchema,
   })

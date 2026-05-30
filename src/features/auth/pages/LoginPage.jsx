@@ -55,11 +55,12 @@ export default function LoginPage() {
       toast.success(resetSuccessMessage);
     }
     if (oauthError) {
-      const desc = oauthError === "access_denied"
-        ? "Google sign-in was canceled. You can try again or use your email and password."
-        : oauthError === "google_email_not_verified"
-          ? "Google did not confirm a verified email for this account."
-          : `Google sign-in failed: ${oauthError}${oauthErrorDesc ? ` — ${oauthErrorDesc}` : ""}`;
+      const desc =
+        oauthError === "access_denied"
+          ? "Google sign-in was canceled. You can try again or use your email and password."
+          : oauthError === "google_email_not_verified"
+            ? "Google did not confirm a verified email for this account."
+            : "Google sign-in failed. Please try again or use your email and password.";
       toast.warning(desc);
     }
   }, [sessionEndedMessage, resetSuccessMessage, oauthError, oauthErrorDesc]);
@@ -89,12 +90,12 @@ export default function LoginPage() {
         } else if (isLoginRateLimited(err)) {
           toast.warning(getApiErrorMessage(err, "Too many login attempts. Please wait and try again."));
         } else {
-          toast.danger(getApiErrorMessage(
-            err,
-            err?.response?.status === 500
-              ? "Server error during sign in. Restart the API, ensure Docker (Postgres, Redis, MailHog) is running, then try again."
-              : "Invalid email or password. Please check your credentials and try again."
-          ));
+          const status = err?.response?.status;
+          const fallback =
+            status === 500
+              ? "A server error occurred during sign in. Please try again in a moment."
+              : "Incorrect email or password. Please double-check and try again.";
+          toast.danger(getApiErrorMessage(err, fallback));
         }
       },
     });

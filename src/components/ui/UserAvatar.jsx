@@ -1,9 +1,9 @@
 import React from "react";
 import { Avatar } from "@heroui/react";
 
-/** Backend profile field: `avatarUrl` (from GET /users/me). */
+/** Backend profile field: `avatar_url` (from GET /users/me). */
 function getAvatarUrl(user) {
-  const url = user?.avatarUrl;
+  const url = user?.avatar_url;
   if (typeof url !== "string") return null;
   const trimmed = url.trim();
   return trimmed.length > 0 ? trimmed : null;

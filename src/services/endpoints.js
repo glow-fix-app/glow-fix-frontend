@@ -26,6 +26,7 @@ export const endpoints = {
   notifications: "/notifications",
   services: "/services",
   bookings: "/bookings",
+  vehicles: "/vehicles",
   discover: "/discover",
   diagnosticReports: "/diagnostic_reports",
   reportFindings: "/report_findings",

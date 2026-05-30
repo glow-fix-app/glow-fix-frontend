@@ -33,10 +33,10 @@ export const clientApi = {
   createBooking: (data) => api.post(`${endpoints.bookings}/create`, data).then((res) => res.data),
 
   // Vehicles
-  vehicles: () => api.get(`${endpoints.client}/vehicles`).then((res) => res.data),
-  addVehicle: (data) => api.post(`${endpoints.client}/vehicles`, data).then((res) => res.data),
-  updateVehicle: (id, data) => api.patch(`${endpoints.client}/vehicles/${id}`, data).then((res) => res.data),
-  deleteVehicle: (id) => api.delete(`${endpoints.client}/vehicles/${id}`).then((res) => res.data),
+  vehicles: () => api.get(endpoints.vehicles).then((res) => res.data),
+  addVehicle: (data) => api.post(endpoints.vehicles, data).then((res) => res.data),
+  updateVehicle: (id, data) => api.put(`${endpoints.vehicles}/${id}`, data).then((res) => res.data),
+  deleteVehicle: (id) => api.delete(`${endpoints.vehicles}/${id}`).then((res) => res.data),
 
   // Payments & Billing
   billingSummary: () =>
@@ -51,8 +51,8 @@ export const clientApi = {
 
   // Profile & Settings (users module on backend)
   profile: () => api.get(endpoints.users.me).then((res) => res.data),
-  updateProfile: () =>
-    Promise.reject(new Error("Profile updates are not available on the API yet.")),
+  updateProfile: (data) =>
+    api.put(endpoints.users.me, data).then((res) => res.data),
   updateSecurity: (data) =>
     api
       .post(endpoints.auth.changePassword, {
@@ -61,14 +61,14 @@ export const clientApi = {
         confirmPassword: data.confirmPassword ?? data.newPassword,
       })
       .then((res) => res.data),
-  deleteAccount: () =>
-    Promise.reject(new Error("Account deletion is not available on the API yet.")),
+  deleteAccount: () => api.delete(endpoints.users.me).then((res) => res.data),
   uploadAvatar: (file) => {
     const formData = new FormData();
     formData.append("avatar", file);
     // Let axios set multipart boundary — do not set Content-Type manually.
     return api.put(endpoints.users.avatar, formData).then((res) => res.data);
   },
+  deleteAvatar: () => api.delete(endpoints.users.avatar).then((res) => res.data),
 
   // Loyalty
   loyaltyConfig: () => api.get(endpoints.loyaltyConfig).then((res) => res.data),

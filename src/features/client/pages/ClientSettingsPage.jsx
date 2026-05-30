@@ -86,10 +86,10 @@ export default function ClientSettingsPage() {
             <header className="mb-6 shrink-0">
               <p className="mb-4 text-[10px] font-semibold uppercase tracking-wider text-text-muted">Account</p>
               <div className="flex items-center gap-3">
-                <UserAvatar
+                {/* <UserAvatar
                   user={user}
                   className="h-12 w-12"
-                />
+                /> */}
                 <div className="min-w-0">
                   <p className="truncate text-[15px] font-semibold text-text-primary">{user?.name || user?.full_name || "User"}</p>
                   <p className="truncate text-[12px] text-text-tertiary">{user?.email}</p>
@@ -105,11 +105,10 @@ export default function ClientSettingsPage() {
                     to={item.path}
                     className={({ isActive }) => {
                       const isItemActive = isActive || (item.id === "personal-info" && isBaseSettings);
-                      return `flex items-center justify-between rounded-xl px-3 py-3 transition-all ${
-                        isItemActive
+                      return `flex items-center justify-between rounded-xl px-3 py-3 transition-all ${isItemActive
                           ? "bg-gray-100 text-text-primary"
                           : "text-text-secondary hover:bg-surface-hover hover:text-text-primary"
-                      }`;
+                        }`;
                     }}
                   >
                     <div className="flex items-center gap-3">

@@ -7,7 +7,7 @@ import { FormInput } from "@/components/ui/FormInput";
 import { useUpdateProfile } from "@/features/client/hooks/useProfile";
 import { clientApi } from "@/features/client/services/clientApi";
 import { setCurrentUser } from "@/store/slices/authSlice";
-import { CameraIcon } from "@heroicons/react/24/outline";
+import { CameraIcon, TrashIcon } from "@heroicons/react/24/outline";
 
 export default function ClientProfilePage() {
   const dispatch = useDispatch();
@@ -54,7 +54,7 @@ export default function ClientProfilePage() {
     try {
       const data = await clientApi.uploadAvatar(file);
       if (data?.url) {
-        dispatch(setCurrentUser({ ...user, avatarUrl: data.url }));
+        dispatch(setCurrentUser({ ...user, avatar_url: data.url }));
       } else if (data?.user) {
         dispatch(setCurrentUser(data.user));
       } else {
@@ -67,6 +67,19 @@ export default function ClientProfilePage() {
     } finally {
       setIsUploading(false);
       e.target.value = "";
+    }
+  };
+
+  const handleDeleteAvatar = async () => {
+    setIsUploading(true);
+    try {
+      await clientApi.deleteAvatar();
+      dispatch(setCurrentUser({ ...user, avatar_url: null }));
+      toast.success("Avatar removed!");
+    } catch {
+      toast.danger("Failed to remove avatar.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -101,18 +114,33 @@ export default function ClientProfilePage() {
                 onChange={handleAvatarChange}
                 className="hidden"
               />
-              <button
-                type="button"
-                disabled={isUploading}
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-lg bg-neutral-900 ring-2 ring-white disabled:opacity-50"
-              >
-                <CameraIcon className="h-3.5 w-3.5 text-white" />
-              </button>
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h2 className="truncate text-[17px] font-semibold text-text-primary">{displayName}</h2>
             <p className="mt-0.5 truncate text-[13px] text-text-tertiary">{displayEmail}</p>
+            
+            <div className="mt-3 flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="flat"
+                className="h-8 rounded-lg bg-surface-hover px-3 text-[12px] font-semibold text-text-secondary hover:bg-gray-200"
+                onPress={() => fileInputRef.current?.click()}
+                isLoading={isUploading}
+              >
+                Change picture
+              </Button>
+              {user?.avatar_url && (
+                <Button
+                  size="sm"
+                  variant="light"
+                  className="h-8 rounded-lg px-3 text-[12px] font-semibold text-red-500 hover:bg-red-50"
+                  onPress={handleDeleteAvatar}
+                  isDisabled={isUploading}
+                >
+                  Remove
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </Card>

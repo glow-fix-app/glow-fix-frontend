@@ -47,10 +47,7 @@ export default function VehicleModal({ isOpen, onClose, vehicleToEdit = null }) 
         await updateMutation.mutateAsync({ id: vehicleToEdit.id, data });
         toast.success("Vehicle updated successfully");
       } else {
-        await addMutation.mutateAsync({
-          ...data,
-          client_id: user?.clientProfile?.id || null
-        });
+        await addMutation.mutateAsync(data);
         toast.success("Vehicle added successfully");
       }
       onClose();
@@ -106,11 +103,12 @@ export default function VehicleModal({ isOpen, onClose, vehicleToEdit = null }) 
                   />
                 </div>
                 <FormInput
-                  label="License Plate (Optional)"
+                  label="License Plate"
                   {...register("license_plate", {
+                    required: "License plate is required",
                     pattern: {
-                      value: /^[a-zA-Z0-9\s\u0600-\u06FF]*$/,
-                      message: "License plate can only contain letters, numbers, and spaces"
+                      value: /^[a-zA-Z0-9\s\u0600-\u06FF-]*$/,
+                      message: "License plate can only contain letters, numbers, spaces, and hyphens"
                     }
                   })}
                   error={errors.license_plate?.message}

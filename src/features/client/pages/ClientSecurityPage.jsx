@@ -2,6 +2,7 @@ import { Card, Button, Chip, toast } from "@heroui/react";
 import { ComputerDesktopIcon, ArrowRightStartOnRectangleIcon, ShieldExclamationIcon } from "@heroicons/react/24/outline";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormInput } from "@/components/ui/FormInput";
+import { PasswordInput } from "@/features/auth/components/PasswordInput";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { clientApi } from "@/features/client/services/clientApi";
@@ -27,8 +28,8 @@ export default function ClientSecurityPage() {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(changePasswordSchema),
-    mode: "onBlur",
-    reValidateMode: "onBlur",
+    mode: "onSubmit",
+    reValidateMode: "onChange",
   });
 
   const updatePasswordMutation = useMutation({
@@ -122,27 +123,21 @@ export default function ClientSecurityPage() {
         </header>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <FormInput
+            <PasswordInput
               label="Current password"
-              type="password"
               autoComplete="current-password"
-              placeholder="Current password"
               {...register("currentPassword")}
               error={errors.currentPassword?.message}
             />
-            <FormInput
+            <PasswordInput
               label="New password"
-              type="password"
               autoComplete="new-password"
-              placeholder="8+ chars, upper, lower, number, special"
               {...register("newPassword")}
               error={errors.newPassword?.message}
             />
-            <FormInput
+            <PasswordInput
               label="Confirm new password"
-              type="password"
               autoComplete="new-password"
-              placeholder="Confirm new password"
               {...register("confirmPassword")}
               error={errors.confirmPassword?.message}
             />
