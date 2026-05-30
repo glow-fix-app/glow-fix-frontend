@@ -102,8 +102,17 @@ export const authApi = {
     return res.data;
   },
 
+  async verifyResetOtp(payload) {
+    const res = await api.post(endpoints.auth.verifyResetOtp, payload);
+    return res.data;
+  },
+
   async resetPassword(payload) {
-    const res = await api.post(endpoints.auth.resetPassword, payload);
+    const res = await api.post(endpoints.auth.resetPassword, {
+      resetToken: payload.resetToken,
+      newPassword: payload.newPassword,
+      confirmPassword: payload.confirmPassword,
+    });
     return res.data;
   },
 };

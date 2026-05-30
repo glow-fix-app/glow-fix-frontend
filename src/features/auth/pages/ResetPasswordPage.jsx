@@ -55,7 +55,7 @@ export default function ResetPasswordPage() {
           toast.danger(
             getApiErrorMessage(
               err,
-              "Invalid or expired code, or password does not meet requirements. Request a new code if needed."
+              "Your reset session has expired or the password does not meet requirements. Please start over."
             )
           );
         },

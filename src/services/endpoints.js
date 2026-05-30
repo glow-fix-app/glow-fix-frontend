@@ -12,6 +12,7 @@ export const endpoints = {
     changePassword: "/auth/change-password",
     forgotPassword: "/auth/forgot-password",
     resetPassword: "/auth/reset-password",
+    verifyResetOtp: "/auth/verify-reset-otp",
     mfaValidate: "/auth/mfa/validate",
     google: "/auth/google",
   },

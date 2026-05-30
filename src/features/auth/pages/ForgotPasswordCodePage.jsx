@@ -37,10 +37,9 @@ export default function ForgotPasswordCodePage() {
 
     setIsSubmitting(true);
     try {
-      const data = await authApi.verifyOtp({
+      const data = await authApi.verifyResetOtp({
         email,
         otp,
-        purpose: "PASSWORD_RESET",
       });
       navigate("/auth/reset-password", {
         replace: true,
