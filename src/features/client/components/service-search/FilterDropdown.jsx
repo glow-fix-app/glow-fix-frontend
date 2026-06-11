@@ -58,7 +58,7 @@ export default function FilterDropdown({
       className={className}
     >
       <Label className="sr-only">{placeholder}</Label>
-      <Autocomplete.Trigger className="flex h-12 items-center gap-2 rounded-full border border-border-default bg-white px-3 shadow-sm data-[focus-within=true]:border-brand-500 data-[focus-within=true]:ring-2 data-[focus-within=true]:ring-brand-500/20">
+      <Autocomplete.Trigger className="flex h-12 items-center gap-2 rounded-xl border border-border-default bg-white px-3 shadow-none data-[focus-within=true]:border-brand-500 data-[focus-within=true]:ring-2 data-[focus-within=true]:ring-brand-500/20">
         {isLoading ? (
           <Spinner size="sm" color="primary" className="shrink-0" />
         ) : Icon ? (

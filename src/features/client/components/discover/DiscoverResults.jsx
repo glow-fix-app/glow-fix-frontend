@@ -42,19 +42,13 @@ export default function DiscoverResults({
   selectedProviderId,
   onSelectProvider,
 }) {
-  if (!isLocationReady || isWaitingForLocationQuery || isLoading) {
+  // Only show spinner when actively waiting for results
+  if (isWaitingForLocationQuery || isLoading) {
     return <LoadingBlock />;
   }
 
-  if (locationError) {
-    return (
-      <EmptyState
-        icon={MapPinIcon}
-        title="Location access needed"
-        message={locationError}
-      />
-    );
-  }
+  // Show location error as a soft banner, not a hard block
+  // (we still show providers below in city/all mode)
 
   if (error) {
     return (

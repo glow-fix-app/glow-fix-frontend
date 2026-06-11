@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import PublicNavbar from "./PublicNavbar";
 import Footer from "./Footer";
+import ForceLocationModal from "./ForceLocationModal";
 
 export default function ClientLayout() {
   return (
@@ -12,6 +13,7 @@ export default function ClientLayout() {
         </div>
       </main>
       <Footer />
+      <ForceLocationModal />
     </div>
   );
 }

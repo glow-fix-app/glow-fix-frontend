@@ -12,10 +12,12 @@ export default function DiscoverToolbar({
   layout,
   showFilters,
   onSearchChange,
-  onSearchTypeChange,
-  onSortChange,
   onLayoutChange,
   onToggleFilters,
+  locations,
+  locationId,
+  onLocationChange,
+  isLocating,
 }) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center shrink-0">
@@ -23,10 +25,10 @@ export default function DiscoverToolbar({
         <DiscoverSearchBar
           search={filters.search}
           onSearchChange={onSearchChange}
-          searchType={filters.searchType}
-          onSearchTypeChange={onSearchTypeChange}
-          sort={sort}
-          onSortChange={onSortChange}
+          locations={locations}
+          locationId={locationId}
+          onLocationChange={onLocationChange}
+          isLocating={isLocating}
         />
       </div>
 

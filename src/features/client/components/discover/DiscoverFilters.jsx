@@ -5,10 +5,21 @@ const RATING_OPTIONS = [
   { value: 4.5, label: "4.5★" },
 ];
 
-export default function DiscoverFilters({ filters, onChange, onReset }) {
+export default function DiscoverFilters({ filters, onChange, onReset, categories = [] }) {
   function update(key, value) {
     onChange({ ...filters, [key]: value });
   }
+
+  function toggleCategory(categoryName) {
+    const currentCategories = filters.categories || [];
+    const newCategories = currentCategories.includes(categoryName)
+      ? currentCategories.filter(n => n !== categoryName)
+      : [...currentCategories, categoryName];
+    update("categories", newCategories);
+  }
+
+  // Ensure "all" is not shown in the list since we use checkboxes
+  const categoryItems = categories.filter(c => c.id !== "all");
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -29,29 +40,48 @@ export default function DiscoverFilters({ filters, onChange, onReset }) {
         </button>
       </div>
 
-      {/* Service Type */}
-      <div className="mb-6">
-        <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
-          Service
-        </p>
-        <div className="flex gap-2">
-          {["wash", "repair"].map((type) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() =>
-                update("serviceType", filters.serviceType === type ? "all" : type)
-              }
-              className={`flex-1 rounded-xl border px-4 py-2.5 text-[13px] font-semibold transition-all ${filters.serviceType === type
-                  ? "border-brand-500 bg-brand-500 text-white"
-                  : "border-border-default bg-white text-text-tertiary hover:bg-surface-hover"
-                }`}
-            >
-              {type === "wash" ? "Wash" : "Repair"}
-            </button>
-          ))}
+      {/* Categories */}
+      {categoryItems.length > 0 && (
+        <div className="mb-6">
+          <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+            Categories
+          </p>
+          <div className="max-h-48 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+            {categoryItems.map((cat) => {
+              const isSelected = (filters.categories || []).includes(cat.name || cat.label);
+              return (
+                <label
+                  key={cat.id}
+                  className="flex items-center gap-3 cursor-pointer group"
+                >
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={isSelected}
+                    onChange={() => toggleCategory(cat.name || cat.label)}
+                  />
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+                    isSelected 
+                      ? "bg-brand-500 border-brand-500 text-white" 
+                      : "border-gray-300 bg-white group-hover:border-brand-500"
+                  }`}>
+                    {isSelected && (
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className={`text-[13px] font-medium transition-colors ${
+                    isSelected ? "text-text-primary" : "text-text-tertiary group-hover:text-text-primary"
+                  }`}>
+                    {cat.label}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Distance */}
       <div className="mb-6">

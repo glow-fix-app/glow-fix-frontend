@@ -21,7 +21,7 @@ import { GoogleButton } from "@/features/auth/components/GoogleButton";
 import { PasswordInput } from "@/features/auth/components/PasswordInput";
 import { SubmitButton } from "@/features/auth/components/SubmitButton";
 import { FileUploadField } from "@/features/auth/components/FileUploadField";
-import BranchLocationPicker from "@/features/auth/components/BranchLocationPicker";
+import LocationPicker from "@/components/ui/LocationPicker";
 import { useRegister } from "@/features/auth/hooks/useRegister";
 import { createProviderRegisterResolver, providerWizardSteps } from "@/features/auth/validation/authSchemas";
 import { getSafeAuthRedirectPath } from "@/features/auth/utils/authRedirect";
@@ -334,7 +334,7 @@ export default function RegisterPage() {
                     control={control}
                     name="branchLocation"
                     render={({ field }) => (
-                      <BranchLocationPicker
+                      <LocationPicker
                         error={errors.branchLocation?.message}
                         value={field.value}
                         onChange={field.onChange}

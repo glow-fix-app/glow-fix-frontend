@@ -1,12 +1,13 @@
 import { Drawer } from "@heroui/react";
 import DiscoverFilters from "@/features/client/components/discover/DiscoverFilters";
 
-function FilterBody({ filters, onChange, onReset }) {
+function FilterBody({ filters, onChange, onReset, categories }) {
   return (
     <DiscoverFilters
       filters={filters}
       onChange={onChange}
       onReset={onReset}
+      categories={categories}
     />
   );
 }
@@ -17,6 +18,7 @@ export default function DiscoverFilterPanel({
   onChange,
   onReset,
   onOpenChange,
+  categories,
 }) {
   return (
     <>
@@ -26,7 +28,7 @@ export default function DiscoverFilterPanel({
         } transition-all self-start lg:pr-2`}
       >
         <div className="lg:sticky lg:top-24 flex flex-col bg-white p-5 border border-border-default shadow-sm rounded-xl">
-          <FilterBody filters={filters} onChange={onChange} onReset={onReset} />
+          <FilterBody filters={filters} onChange={onChange} onReset={onReset} categories={categories} />
         </div>
       </aside>
 
@@ -39,7 +41,7 @@ export default function DiscoverFilterPanel({
             <Drawer.Content placement="left" className="z-[9999]">
               <Drawer.Dialog>
                 <Drawer.Body className="p-0 bg-white overflow-y-auto">
-                  <FilterBody filters={filters} onChange={onChange} onReset={onReset} />
+                  <FilterBody filters={filters} onChange={onChange} onReset={onReset} categories={categories} />
                 </Drawer.Body>
               </Drawer.Dialog>
             </Drawer.Content>

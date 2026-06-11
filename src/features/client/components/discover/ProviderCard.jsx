@@ -1,17 +1,34 @@
-import { StarIcon } from "@heroicons/react/24/solid";
+import { StarIcon, MapPinIcon } from "@heroicons/react/24/solid";
 import { Card } from "@heroui/react";
 import { Link } from "react-router-dom";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ROUTE_PATHS } from "@/routes/paths";
 
-const TYPE_STYLES = {
-  WASH_ONLY: { dot: "bg-emerald-500", label: "Car Wash" },
-  REPAIR_ONLY: { dot: "bg-blue-500", label: "Repair" },
-  BOTH: { dot: "bg-blue-500", label: "Wash & Repair" },
-};
+function getServiceLabel(serviceType) {
+  if (!serviceType) return "—";
+  const t = serviceType.toLowerCase();
+  if (t === "wash") return "Car Wash";
+  if (t === "repair") return "Repair";
+  if (t === "both") return "Wash & Repair";
+  return serviceType;
+}
 
 export default function ProviderCard({ provider, isSelected, onSelect }) {
-  const style = TYPE_STYLES[provider.type] || TYPE_STYLES.BOTH;
+  const distanceKm = provider.distanceKm;
+  const distanceLabel =
+    distanceKm != null && distanceKm > 0
+      ? distanceKm < 1
+        ? `${Math.round(distanceKm * 1000)} m`
+        : `${distanceKm.toFixed(1)} km`
+      : "—";
+
+  const openLabel = provider.isOpen
+    ? provider.operatingHoursToday
+      ? `Open · ${provider.operatingHoursToday}`
+      : "Open now"
+    : provider.operatingHoursToday
+    ? `Closed · ${provider.operatingHoursToday}`
+    : "Closed";
 
   return (
     <Link
@@ -37,8 +54,8 @@ export default function ProviderCard({ provider, isSelected, onSelect }) {
             <h3 className="truncate text-[15px] font-semibold text-text-primary">
               {provider.businessName}
             </h3>
-            <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-text-tertiary">
-              <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${style.dot}`} />
+            <div className="mt-0.5 flex items-center gap-1 text-[12px] text-text-tertiary">
+              <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-text-muted" />
               <span className="truncate">{provider.address}</span>
             </div>
           </div>
@@ -47,6 +64,7 @@ export default function ProviderCard({ provider, isSelected, onSelect }) {
         <div className="my-2.5 border-t border-dashed border-border-default" />
 
         <div className="grid grid-cols-3 gap-2">
+          {/* Rating */}
           <div>
             <p className="text-[9px] font-medium uppercase tracking-wider text-text-muted">
               Rating
@@ -64,36 +82,26 @@ export default function ProviderCard({ provider, isSelected, onSelect }) {
             </div>
           </div>
 
+          {/* Distance */}
           <div>
             <p className="text-[9px] font-medium uppercase tracking-wider text-text-muted">
               Distance
             </p>
             <p className="mt-0.5 text-[13px] font-semibold text-text-primary">
-              {provider.distance != null
-                ? provider.distance < 1
-                  ? `${Math.round(provider.distance * 1000)} m`
-                  : `${provider.distance.toFixed(1)} km`
-                : "—"}
+              {distanceLabel}
             </p>
           </div>
 
+          {/* Open / Closed status (replaces "Service") */}
           <div>
             <p className="text-[9px] font-medium uppercase tracking-wider text-text-muted">
-              Service
+              Status
             </p>
-            <p className="mt-0.5 text-[13px] font-semibold text-text-primary">
-              {style.label}
+            <p className={`mt-0.5 text-[13px] font-semibold ${provider.isOpen ? "text-emerald-500" : "text-red-400"}`}>
+              {provider.isOpen ? "Open" : "Closed"}
             </p>
           </div>
         </div>
-
-        <p
-          className={`mt-2.5 text-[11px] font-medium ${
-            provider.isOpen ? "text-emerald-500" : "text-red-400"
-          }`}
-        >
-          ● {provider.openLabel}
-        </p>
       </Card>
     </Link>
   );

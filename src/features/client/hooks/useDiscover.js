@@ -28,12 +28,38 @@ function getInitials(name = "") {
     .join("");
 }
 
-function enrichWithAvatar(providers) {
-  return (providers || []).map((p) => {
-    const avatar = getAvatarStyle(p.businessName);
+function normalizeProvider(p) {
+  return {
+    id: p.id,
+    businessName: p.business_name,
+    address: p.address,
+    contactPhone: p.contact_phone,
+    contactEmail: p.contact_email,
+    distanceKm: p.distance_km,
+    avgRating: p.average_rating,
+    reviewCount: p.total_reviews,
+    isOpen: p.is_open,
+    isVerified: p.is_verified,
+    serviceType: p.service_type,
+    offers: p.offers || [],
+    operatingHoursToday: p.operating_hours_today,
+    // Expose as both lat/lng (for map) and latitude/longitude
+    lat: p.latitude,
+    lng: p.longitude,
+    latitude: p.latitude,
+    longitude: p.longitude,
+    createdAt: p.created_at,
+  };
+}
+
+function enrichWithAvatar(rawData) {
+  const list = Array.isArray(rawData) ? rawData : rawData?.data ?? [];
+  return list.map((p) => {
+    const normalized = normalizeProvider(p);
+    const avatar = getAvatarStyle(normalized.businessName);
     return {
-      ...p,
-      initials: getInitials(p.businessName),
+      ...normalized,
+      initials: getInitials(normalized.businessName),
       avatarBg: avatar.bg,
       avatarText: avatar.text,
     };
@@ -44,32 +70,31 @@ export function useDiscover({
   filters = {},
   sort = "recommended",
   userLocation = null,
+  city = null,
   enabled = true,
 } = {}) {
-  const { serviceType, maxDistance, minRating, openNow, search, searchType } = filters;
+  const { maxDistance, minRating, openNow, search } = filters;
 
   const { data, isLoading, error } = useQuery({
     queryKey: [
       ...queryKeys.discover,
       userLocation?.lat ?? null,
       userLocation?.lng ?? null,
-      serviceType,
+      city,
       maxDistance,
       minRating,
       openNow,
       search,
-      searchType,
       sort,
     ],
     queryFn: ({ signal }) =>
       clientApi.discover({
         userLocation,
-        serviceType,
+        city,
         maxDistance,
         minRating,
         openNow,
         search,
-        searchType,
         sort,
         signal,
       }),
@@ -78,7 +103,13 @@ export function useDiscover({
     placeholderData: (previousData) => previousData,
   });
 
-  const providers = useMemo(() => enrichWithAvatar(data), [data]);
+  const allProviders = useMemo(() => enrichWithAvatar(data), [data]);
 
-  return { providers, isLoading, error: error || null };
+  // The user requested NO frontend filtration for categories
+  const providers = allProviders;
+
+  const meta = data?.meta ?? null;
+  const filterOptions = data?.filters ?? null;
+
+  return { providers, meta, filterOptions, isLoading, error: error || null };
 }

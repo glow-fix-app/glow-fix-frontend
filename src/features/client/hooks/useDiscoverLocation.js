@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 const LOCATION_CACHE_KEY = "discover:lastUserLocation";
 const LOCATION_REFRESH_THRESHOLD_KM = 0.05;
@@ -38,17 +39,33 @@ function distanceKm(a, b) {
 }
 
 export function useDiscoverLocation() {
+  const user = useSelector((state) => state.auth.user);
+  const fallbackLocation = user?.clientLocation
+    ? { lat: user.clientLocation.latitude, lng: user.clientLocation.longitude }
+    : null;
+
   const cachedLocation = readCachedLocation();
-  const [userLocation, setUserLocation] = useState(cachedLocation);
-  const [isLocationReady, setIsLocationReady] = useState(Boolean(cachedLocation));
+  const [userLocation, setUserLocation] = useState(cachedLocation || fallbackLocation);
+  const [isLocationReady, setIsLocationReady] = useState(Boolean(cachedLocation || fallbackLocation));
   const [locationError, setLocationError] = useState("");
-  const [locationLabel, setLocationLabel] = useState(cachedLocation ? "you" : "");
+  const [locationLabel, setLocationLabel] = useState(cachedLocation ? "you" : fallbackLocation ? "saved location" : "");
+
+  // Update if fallback location arrives later
+  useEffect(() => {
+    if (!userLocation && fallbackLocation) {
+      setUserLocation(fallbackLocation);
+      setLocationLabel("saved location");
+      setIsLocationReady(true);
+    }
+  }, [fallbackLocation, userLocation]);
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setUserLocation(null);
-      setLocationLabel("");
-      setLocationError("Your browser does not support location services.");
+      if (!fallbackLocation) {
+        setUserLocation(null);
+        setLocationLabel("");
+        setLocationError("Your browser does not support location services.");
+      }
       setIsLocationReady(true);
       return;
     }
@@ -71,9 +88,16 @@ export function useDiscoverLocation() {
         setIsLocationReady(true);
       },
       () => {
-        setUserLocation(null);
-        setLocationLabel("");
-        setLocationError("Allow location access to find providers near you.");
+        if (!fallbackLocation) {
+          setUserLocation(null);
+          setLocationLabel("");
+          setLocationError("Allow location access to find providers near you.");
+        } else {
+          // If browser location is denied, just rely on the fallback location silently
+          setUserLocation(fallbackLocation);
+          setLocationLabel("saved location");
+          setLocationError("");
+        }
         setIsLocationReady(true);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }

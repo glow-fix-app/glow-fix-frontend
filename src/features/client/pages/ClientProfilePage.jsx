@@ -8,6 +8,7 @@ import { useUpdateProfile } from "@/features/client/hooks/useProfile";
 import { clientApi } from "@/features/client/services/clientApi";
 import { setCurrentUser } from "@/store/slices/authSlice";
 import { CameraIcon, TrashIcon } from "@heroicons/react/24/outline";
+import LocationPicker from "@/components/ui/LocationPicker";
 
 export default function ClientProfilePage() {
   const dispatch = useDispatch();
@@ -16,6 +17,18 @@ export default function ClientProfilePage() {
   const [verificationStatus, setVerificationStatus] = useState(
     user?.phone_verified ? "verified" : "unverified"
   );
+  
+  // Location state — initialize from redux user (may be null until hydrated)
+  const [location, setLocation] = useState(
+    user?.clientLocation
+      ? { lat: user.clientLocation.latitude, lng: user.clientLocation.longitude }
+      : null
+  );
+  const [isLocationDirty, setIsLocationDirty] = useState(false);
+  const [isSavingLocation, setIsSavingLocation] = useState(false);
+  // Track what the server says the city is
+  const [cityLabel, setCityLabel] = useState(user?.clientLocation?.city ?? null);
+
   const fileInputRef = useRef(null);
 
   const updateMutation = useUpdateProfile();
@@ -33,6 +46,7 @@ export default function ClientProfilePage() {
     },
   });
 
+  // Sync form fields AND location pin whenever the server profile arrives/changes
   useEffect(() => {
     if (user) {
       reset({
@@ -40,11 +54,46 @@ export default function ClientProfilePage() {
         email: user.email || "",
         phone: user.phone || "",
       });
+      // Only update map pin from server data if user hasn't manually moved it
+      if (!isLocationDirty && user.clientLocation) {
+        setLocation({ lat: user.clientLocation.latitude, lng: user.clientLocation.longitude });
+        setCityLabel(user.clientLocation.city ?? null);
+      } else if (!isLocationDirty && !user.clientLocation) {
+        setLocation(null);
+        setCityLabel(null);
+      }
     }
-  }, [user, reset]);
+  }, [user, reset, isLocationDirty]);
 
   const onSubmit = (data) => {
     updateMutation.mutate({ full_name: data.name, phone: data.phone });
+  };
+
+  const handleSaveLocation = async () => {
+    if (!location) return;
+    try {
+      setIsSavingLocation(true);
+      const result = await clientApi.updateLocation({
+        latitude: location.lat,
+        longitude: location.lng,
+      });
+      const city = result?.location?.city ?? null;
+      setCityLabel(city);
+      dispatch(setCurrentUser({
+        ...user,
+        clientLocation: {
+          latitude: location.lat,
+          longitude: location.lng,
+          city,
+        },
+      }));
+      setIsLocationDirty(false);
+      toast.success("Location updated successfully!");
+    } catch (err) {
+      toast.danger("Failed to update location. Please try again.");
+    } finally {
+      setIsSavingLocation(false);
+    }
   };
 
   const handleAvatarChange = async (e) => {
@@ -231,7 +280,59 @@ export default function ClientProfilePage() {
         </form>
       </Card>
 
-      {/* end of profile page content */}
+      {/* ── Location Details ─────────────────────────────────────────────── */}
+      <Card className="border-none bg-white p-6 shadow-sm ring-1 ring-black/5 rounded-xl">
+        <header className="mb-6">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+            Location Details
+          </p>
+        </header>
+        <div className="space-y-6">
+          <div>
+            {cityLabel ? (
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[13px] text-text-muted font-medium">Current location:</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-3 py-0.5 text-[13px] font-semibold text-brand-600 ring-1 ring-brand-200">
+                  📍 {cityLabel}
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 mb-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-0.5 text-[13px] font-medium text-amber-700 ring-1 ring-amber-200">
+                  ⚠ No location set
+                </span>
+              </div>
+            )}
+            <p className="text-[13px] text-text-secondary">
+              Your default location is used to find and suggest the best service providers near you.
+            </p>
+          </div>
+          <div className="rounded-2xl overflow-hidden ring-1 ring-black/5">
+            <LocationPicker
+              value={location}
+              onChange={(newLoc) => {
+                setLocation(newLoc);
+                setIsLocationDirty(true);
+              }}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-4 pt-2">
+            <p className="text-[12px] text-text-muted">
+              {isLocationDirty ? "You have unsaved location changes." : "Your location is up to date."}
+            </p>
+            <Button
+              type="button"
+              isDisabled={!isLocationDirty || !location}
+              isLoading={isSavingLocation}
+              onPress={handleSaveLocation}
+              className="h-9 rounded-xl bg-brand-500 px-6 text-[13px] font-semibold text-white hover:bg-brand-600 disabled:opacity-40"
+            >
+              {isSavingLocation ? "Saving..." : "Update location"}
+            </Button>
+          </div>
+        </div>
+      </Card>
+
     </div>
   );
 }

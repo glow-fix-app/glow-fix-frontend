@@ -26,15 +26,24 @@ function FlyToCenter({ center }) {
   const map = useMap();
 
   useEffect(() => {
-    if (center) {
-      map.flyTo([center.lat, center.lng], 14, { duration: 1.2 });
+    if (
+      center &&
+      typeof center.lat === "number" && !isNaN(center.lat) &&
+      typeof center.lng === "number" && !isNaN(center.lng)
+    ) {
+      // Leaflet crashes with NaN if we try to flyTo on a map with 0x0 size
+      // (which happens when rendering inside a `display: none` container).
+      const size = map.getSize();
+      if (size.x > 0 && size.y > 0) {
+        map.flyTo([center.lat, center.lng], 14, { duration: 1.2 });
+      }
     }
   }, [center, map]);
 
   return null;
 }
 
-export default function BranchLocationPicker({ value, onChange, error }) {
+export default function LocationPicker({ value, onChange, error }) {
   const [userCenter, setUserCenter] = useState(null);
   const [locating, setLocating] = useState(true);
   const [locationError, setLocationError] = useState(false);
@@ -57,6 +66,13 @@ export default function BranchLocationPicker({ value, onChange, error }) {
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        // Guard against NaN from geolocation (happens in some mock/dev environments)
+        if (typeof pos.coords.latitude !== "number" || isNaN(pos.coords.latitude) ||
+            typeof pos.coords.longitude !== "number" || isNaN(pos.coords.longitude)) {
+          setLocating(false);
+          setLocationError(true);
+          return;
+        }
         const detected = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setUserCenter(detected);
         setLocating(false);
@@ -73,7 +89,13 @@ export default function BranchLocationPicker({ value, onChange, error }) {
     );
   }, []);
 
-  const position = value?.lat != null && value?.lng != null ? value : null;
+  // Only treat value as a valid position if both lat and lng are real numbers
+  const isValidCoord = (v) =>
+    v != null &&
+    typeof v.lat === "number" && !isNaN(v.lat) &&
+    typeof v.lng === "number" && !isNaN(v.lng);
+
+  const position = isValidCoord(value) ? value : null;
 
   // Don't render the map until we've resolved the user's location (or failed)
   if (locating) {
@@ -90,8 +112,9 @@ export default function BranchLocationPicker({ value, onChange, error }) {
   }
 
   // Use the selected position, or the detected user location, or a world-level fallback
-  const initialCenter = position ?? userCenter ?? { lat: 0, lng: 0 };
-  const initialZoom = position ? 14 : userCenter ? 13 : 2;
+  const safeUserCenter = isValidCoord(userCenter) ? userCenter : null;
+  const initialCenter = position ?? safeUserCenter ?? { lat: 30.0444, lng: 31.2357 }; // fallback to Cairo
+  const initialZoom = position ? 14 : safeUserCenter ? 13 : 10;
 
   return (
     <div className="space-y-1.5">

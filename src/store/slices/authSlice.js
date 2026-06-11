@@ -39,6 +39,10 @@ function normalizeUser(user) {
     u.role = mapApiRole(u.role);
   }
 
+  if (u.clientLocation !== undefined) {
+    u.clientLocation = u.clientLocation;
+  }
+
   return u;
 }
 

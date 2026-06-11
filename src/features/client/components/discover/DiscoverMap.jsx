@@ -3,17 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from "react-le
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-const TYPE_COLORS = {
-  WASH_ONLY: "#22c55e",
-  REPAIR_ONLY: "#f97316",
-  BOTH: "#3b82f6",
-};
-
-const TYPE_LABELS = {
-  WASH_ONLY: "Car Wash",
-  REPAIR_ONLY: "Repair",
-  BOTH: "Wash & Repair",
-};
+const MARKER_COLOR = "#3b82f6";
 
 function createMarkerIcon(color, isSelected = false) {
   const size = isSelected ? 36 : 28;
@@ -44,14 +34,13 @@ const userIcon = L.divIcon({
 });
 
 function formatDistance(km) {
-  if (km == null) return null;
+  if (km == null || km <= 0) return null;
   if (km < 1) return `${Math.round(km * 1000)} m away`;
   return `${km.toFixed(1)} km away`;
 }
 
-function ProviderMapPopup({ provider }) {
-  const serviceLabel = provider.typeLabel || TYPE_LABELS[provider.type] || "Service";
-  const distanceLabel = formatDistance(provider.distance);
+function ProviderMapPopup({ provider, onSelect }) {
+  const distanceLabel = formatDistance(provider.distanceKm);
 
   return (
     <div className="min-w-[200px] max-w-[240px]">
@@ -85,29 +74,37 @@ function ProviderMapPopup({ provider }) {
         )}
 
         <div className="flex items-center justify-between gap-2">
-          <span className="text-text-muted">Service</span>
-          <span className="font-semibold text-text-primary">{serviceLabel}</span>
-        </div>
-
-        <div className="flex items-center justify-between gap-2">
           <span className="text-text-muted">Status</span>
-          <span
-            className={`font-semibold ${provider.isOpen ? "text-emerald-600" : "text-red-500"}`}
-          >
-            {provider.isOpen ? "Open" : "Closed"}
+          <span className={`font-semibold ${provider.isOpen ? "text-emerald-600" : "text-red-500"}`}>
+            {provider.isOpen
+              ? provider.operatingHoursToday
+                ? `Open · ${provider.operatingHoursToday}`
+                : "Open now"
+              : provider.operatingHoursToday
+              ? `Closed · ${provider.operatingHoursToday}`
+              : "Closed"}
           </span>
         </div>
-
-        {provider.openLabel && (
-          <p className="text-[11px] text-text-muted">{provider.openLabel}</p>
-        )}
       </div>
+
+      {/* View in list — scrolls the card into view */}
+      <button
+        type="button"
+        onClick={() => onSelect?.(provider.id)}
+        className="mt-3 w-full rounded-lg bg-brand-500 py-1.5 text-[12px] font-semibold text-white hover:bg-brand-600 transition-colors"
+      >
+        View details ↓
+      </button>
     </div>
   );
 }
 
-function ProviderMarker({ provider, isSelected, icon, onSelect }) {
+function ProviderMarker({ provider, isSelected, onSelect }) {
   const markerRef = useRef(null);
+  const icon = useMemo(
+    () => createMarkerIcon(MARKER_COLOR, isSelected),
+    [isSelected]
+  );
 
   useEffect(() => {
     if (isSelected && markerRef.current) {
@@ -129,7 +126,7 @@ function ProviderMarker({ provider, isSelected, icon, onSelect }) {
       }}
     >
       <Popup closeButton className="provider-map-popup">
-        <ProviderMapPopup provider={provider} />
+        <ProviderMapPopup provider={provider} onSelect={onSelect} />
       </Popup>
     </Marker>
   );
@@ -158,22 +155,33 @@ function FitBounds({ providers, userLocation }) {
 
 function MapLegend() {
   return (
-    <div className="absolute bottom-4 left-4 z-[1000] flex items-center gap-4 rounded-xl bg-white/95 px-4 py-2.5 shadow-lg ring-1 ring-black/5 backdrop-blur-sm">
-      {[
-        { color: "#22c55e", label: "Wash" },
-        { color: "#f97316", label: "Repair" },
-        { color: "#3b82f6", label: "Both" },
-      ].map((item) => (
-        <div key={item.label} className="flex items-center gap-1.5">
-          <span
-            className="h-2.5 w-2.5 rounded-full"
-            style={{ background: item.color }}
-          />
-          <span className="text-[11px] font-semibold text-text-secondary">
-            {item.label}
-          </span>
-        </div>
-      ))}
+    <div className="absolute bottom-4 left-4 z-[1000] flex items-center gap-2 rounded-xl bg-white/95 px-4 py-2.5 shadow-lg ring-1 ring-black/5 backdrop-blur-sm">
+      <span className="h-2.5 w-2.5 rounded-full" style={{ background: MARKER_COLOR }} />
+      <span className="text-[11px] font-semibold text-text-secondary">Providers</span>
+    </div>
+  );
+}
+
+function ZoomControl() {
+  const map = useMap();
+  return (
+    <div className="absolute right-4 top-4 z-[1000] flex flex-col gap-1">
+      <button
+        type="button"
+        aria-label="Zoom in"
+        onClick={() => map.zoomIn()}
+        className="flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-md ring-1 ring-black/5 text-text-tertiary hover:bg-surface-hover transition-colors text-lg font-bold"
+      >
+        +
+      </button>
+      <button
+        type="button"
+        aria-label="Zoom out"
+        onClick={() => map.zoomOut()}
+        className="flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-md ring-1 ring-black/5 text-text-tertiary hover:bg-surface-hover transition-colors text-lg font-bold"
+      >
+        −
+      </button>
     </div>
   );
 }
@@ -184,29 +192,17 @@ export default function DiscoverMap({
   selectedId,
   onSelectProvider,
 }) {
-  const providerWithLocation = useMemo(
-    () => providers.find((provider) => provider.lat != null && provider.lng != null),
+  // Only providers that have valid coordinates
+  const mappableProviders = useMemo(
+    () => providers.filter((p) => p.lat != null && p.lng != null),
     [providers]
   );
 
   const center = useMemo(() => {
     if (userLocation) return [userLocation.lat, userLocation.lng];
-    if (providerWithLocation) return [providerWithLocation.lat, providerWithLocation.lng];
+    if (mappableProviders.length > 0) return [mappableProviders[0].lat, mappableProviders[0].lng];
     return null;
-  }, [providerWithLocation, userLocation]);
-
-  const markerIcons = useRef({});
-
-  function getIcon(type, isSelected) {
-    const key = `${type}-${isSelected}`;
-    if (!markerIcons.current[key]) {
-      markerIcons.current[key] = createMarkerIcon(
-        TYPE_COLORS[type] || TYPE_COLORS.BOTH,
-        isSelected
-      );
-    }
-    return markerIcons.current[key];
-  }
+  }, [mappableProviders, userLocation]);
 
   if (!center) {
     return (
@@ -244,7 +240,7 @@ export default function DiscoverMap({
         />
 
         <ZoomControl />
-        <FitBounds providers={providers} userLocation={userLocation} />
+        <FitBounds providers={mappableProviders} userLocation={userLocation} />
 
         {userLocation && (
           <>
@@ -264,45 +260,17 @@ export default function DiscoverMap({
           </>
         )}
 
-        {providers
-          .filter((p) => p.lat != null && p.lng != null)
-          .map((provider) => (
-            <ProviderMarker
-              key={provider.id}
-              provider={provider}
-              isSelected={provider.id === selectedId}
-              icon={getIcon(provider.type, provider.id === selectedId)}
-              onSelect={onSelectProvider}
-            />
-          ))}
+        {mappableProviders.map((provider) => (
+          <ProviderMarker
+            key={provider.id}
+            provider={provider}
+            isSelected={provider.id === selectedId}
+            onSelect={onSelectProvider}
+          />
+        ))}
       </MapContainer>
 
       <MapLegend />
-    </div>
-  );
-}
-
-function ZoomControl() {
-  const map = useMap();
-
-  return (
-    <div className="absolute right-4 top-4 z-[1000] flex flex-col gap-1">
-      <button
-        type="button"
-        aria-label="Zoom in"
-        onClick={() => map.zoomIn()}
-        className="flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-md ring-1 ring-black/5 text-text-tertiary hover:bg-surface-hover transition-colors text-lg font-bold"
-      >
-        +
-      </button>
-      <button
-        type="button"
-        aria-label="Zoom out"
-        onClick={() => map.zoomOut()}
-        className="flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-md ring-1 ring-black/5 text-text-tertiary hover:bg-surface-hover transition-colors text-lg font-bold"
-      >
-        −
-      </button>
     </div>
   );
 }

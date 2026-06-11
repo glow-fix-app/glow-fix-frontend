@@ -10,7 +10,7 @@ import {
 import { FormField } from "./FormField";
 import { PasswordInput } from "./PasswordInput";
 import { FileUploadField } from "./FileUploadField";
-import BranchLocationPicker from "./BranchLocationPicker";
+import LocationPicker from "@/components/ui/LocationPicker";
 
 export function ProviderDetailsStep({ register, errors }) {
   return (
@@ -81,7 +81,7 @@ export function ProviderBranchStep({ register, errors, control }) {
         control={control}
         name="branchLocation"
         render={({ field }) => (
-          <BranchLocationPicker
+          <LocationPicker
             error={errors.branchLocation?.message}
             value={field.value}
             onChange={field.onChange}

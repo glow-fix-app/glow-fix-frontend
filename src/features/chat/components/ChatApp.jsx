@@ -1,12 +1,11 @@
 import { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { useSearchParams } from "react-router-dom";
 import { format, isToday, isYesterday } from "date-fns";
 import { useChat } from "@/features/chat/hooks/useChat";
 import { setActiveConversation } from "@/store/slices/chatSlice";
 import ChatSidebar from "./ChatSidebar";
 import ChatWindow from "./ChatWindow";
-
-const PERSIST_KEY = "chat_active_conversation";
 
 function formatTime(dateString) {
   if (!dateString) return "";
@@ -19,41 +18,31 @@ function formatTime(dateString) {
 export default function ChatApp() {
   const dispatch = useDispatch();
   const { conversations, socket } = useChat();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const currentUser = useSelector((state) => state.auth.user);
   const conversationsData = useSelector((state) => state.chat.conversations);
   const selectedId = useSelector((state) => state.chat.activeConversationId);
 
-  // Restore persisted conversation on first load
+  // Sync URL -> Redux on load or when URL changes
   useEffect(() => {
-    const saved = sessionStorage.getItem(PERSIST_KEY);
-    if (saved) {
-      dispatch(setActiveConversation(saved));
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Persist whenever the selected conversation changes
-  useEffect(() => {
-    if (selectedId) {
-      sessionStorage.setItem(PERSIST_KEY, selectedId);
-    } else {
-      sessionStorage.removeItem(PERSIST_KEY);
-    }
-  }, [selectedId]);
-
-  // Clean up on unmount
-  useEffect(() => {
-    return () => {
+    const chatIdFromUrl = searchParams.get("id");
+    if (chatIdFromUrl && chatIdFromUrl !== selectedId) {
+      dispatch(setActiveConversation(chatIdFromUrl));
+    } else if (!chatIdFromUrl && selectedId) {
       dispatch(setActiveConversation(null));
-      sessionStorage.removeItem(PERSIST_KEY);
-    };
-  }, [dispatch]);
+    }
+  }, [searchParams, selectedId, dispatch]);
 
   const handleSelect = (id) => {
     dispatch(setActiveConversation(id));
-    if (id && socket?.connected) {
-      socket.emit("conversation.join", { conversationId: id });
+    if (id) {
+      setSearchParams({ id });
+      if (socket?.connected) {
+        socket.emit("conversation.join", { conversationId: id });
+      }
+    } else {
+      setSearchParams({});
     }
   };
 
@@ -62,6 +51,7 @@ export default function ChatApp() {
       socket.emit("conversation.leave", { conversationId: selectedId });
     }
     dispatch(setActiveConversation(null));
+    setSearchParams({});
   };
 
   // Format conversations for the sidebar

@@ -28,9 +28,10 @@ export const endpoints = {
   services: "/services",
   bookings: "/bookings",
   vehicles: "/vehicles",
-  discover: "/discover",
+  discover: "/businesses/discover",
   diagnosticReports: "/diagnostic_reports",
   reportFindings: "/report_findings",
   recommendedRepairs: "/recommended_repairs",
   loyaltyConfig: "/loyalty_config",
+  categories: "/categories",
 };

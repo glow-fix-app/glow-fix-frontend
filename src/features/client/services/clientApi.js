@@ -5,6 +5,7 @@ export const clientApi = {
   // Services
   services: () => api.get(endpoints.services).then((res) => res.data),
   serviceDetails: (id) => api.get(`${endpoints.services}/${id}`).then((res) => res.data),
+  categories: () => api.get(endpoints.categories).then((res) => res.data),
 
   // Bookings
   bookings: () => api.get(`${endpoints.client}/bookings?_expand=branch&_expand=vehicle`).then((res) => res.data),
@@ -62,6 +63,7 @@ export const clientApi = {
       })
       .then((res) => res.data),
   deleteAccount: () => api.delete(endpoints.users.me).then((res) => res.data),
+  updateLocation: (data) => api.put("/clients/me/location", data).then((res) => res.data),
   uploadAvatar: (file) => {
     const formData = new FormData();
     formData.append("avatar", file);
@@ -91,25 +93,32 @@ export const clientApi = {
   // Filtering/sorting is done instantly on the frontend (no re-fetch).
   discover: ({
     userLocation = null,
+    city = null,
     serviceType = "all",
     maxDistance,
     minRating = 0,
     openNow = false,
     search = "",
-    searchType = "provider",
+    searchType = "provider", // backend doesn't use searchType, we'll keep it for frontend compatibility if needed
     sort = "recommended",
     signal,
   } = {}) => {
     const params = new URLSearchParams();
-    if (userLocation?.lat != null) params.set("lat", userLocation.lat);
-    if (userLocation?.lng != null) params.set("lng", userLocation.lng);
-    if (serviceType !== "all") params.set("serviceType", serviceType);
-    if (maxDistance != null) params.set("maxDistance", maxDistance);
-    if (minRating > 0) params.set("minRating", minRating);
-    if (openNow) params.set("openNow", "true");
+    if (userLocation?.lat != null) params.set("latitude", userLocation.lat);
+    if (userLocation?.lng != null) params.set("longitude", userLocation.lng);
+    if (serviceType !== "all") params.set("filters[service]", serviceType);
+    if (maxDistance != null) params.set("filters[max_distance]", maxDistance);
+    if (minRating > 0) params.set("filters[min_rating]", minRating);
+    if (openNow) params.set("filters[open_now]", "true");
     if (search) params.set("search", search);
-    if (searchType !== "provider") params.set("searchType", searchType);
-    if (sort !== "recommended") params.set("sort", sort);
+    if (city) params.set("filters[city]", city);
+    
+    // map frontend sort "recommended" to backend "highest_rated"
+    let sortBy = "highest_rated";
+    if (sort === "rating") sortBy = "highest_rated";
+    else if (sort === "distance") sortBy = "nearest";
+    params.set("sort_by", sortBy);
+
     return api.get(`${endpoints.discover}?${params.toString()}`, { signal }).then((res) => res.data);
   },
 
@@ -224,6 +233,6 @@ export const clientApi = {
     const params = new URLSearchParams();
     if (userLocation?.lat != null) params.set("lat", userLocation.lat);
     if (userLocation?.lng != null) params.set("lng", userLocation.lng);
-    return api.get(`${endpoints.discover}/${providerId}?${params.toString()}`).then((res) => res.data);
+    return api.get(`/businesses/${providerId}?${params.toString()}`).then((res) => res.data);
   },
 };
