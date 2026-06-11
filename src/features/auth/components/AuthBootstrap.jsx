@@ -10,6 +10,8 @@ import {
   startAuthCheck,
   finishAuthCheck,
 } from "@/store/slices/authSlice";
+import { useNotificationSocket } from "@/features/notifications/hooks/useNotificationSocket";
+import { useUnreadMessages } from "@/features/chat/hooks/useUnreadMessages";
 
 const ACCESS_TOKEN_KEY = "accessToken";
 const LOGGED_OUT_KEY = "isLoggedOut";
@@ -23,6 +25,13 @@ export default function AuthBootstrap({ children }) {
   const status = useSelector((state) => state.auth.status);
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const skipNextHydration = useRef(false);
+
+  // Single persistent WebSocket connection tied to the auth session lifetime.
+  // Connects once when the user is authenticated; disconnects on logout.
+  useNotificationSocket();
+
+  // Track unread messages globally so the badge shows on all pages.
+  useUnreadMessages();
 
   useEffect(() => {
     let isMounted = true;

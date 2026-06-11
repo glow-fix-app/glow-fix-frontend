@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/services/queryClient";
 import { clientApi } from "@/features/client/services/clientApi";
+import { toast } from "@heroui/react";
 
 const NO_LOCATION = { id: "all", label: "All locations", lat: null, lng: null };
 
@@ -55,6 +56,11 @@ export function useServiceSearch() {
     return { lat: null, lng: null, label: "All locations" };
   }, [locationId, userCoords, selectedLocation]);
 
+  // When the user picks a named area (e.g. "Zamalek") — not "all" or the
+  // geo "near-me" option — we send it as a location filter to the backend.
+  const locationArea =
+    locationId !== NO_LOCATION.id && locationId !== "near-me" ? locationId : null;
+
   const searchQuery = useQuery({
     queryKey: [
       ...queryKeys.serviceSearch,
@@ -63,6 +69,7 @@ export function useServiceSearch() {
       locationId,
       coords.lat,
       coords.lng,
+      locationArea,
     ],
     queryFn: () =>
       clientApi.searchServices({
@@ -71,6 +78,7 @@ export function useServiceSearch() {
         lat: coords.lat,
         lng: coords.lng,
         maxDistance: coords.lat != null && coords.lng != null ? 50 : null,
+        locationArea,
       }),
     staleTime: 1000 * 60,
     placeholderData: (prev) => prev,
@@ -80,7 +88,10 @@ export function useServiceSearch() {
     if (searchQuery.data?.locations?.length) {
       setLocations([
         NO_LOCATION,
-        ...searchQuery.data.locations.filter((location) => location.id !== NO_LOCATION.id),
+        { id: "near-me", label: "Near you", useGeo: true },
+        ...searchQuery.data.locations.filter(
+          (location) => location.id !== NO_LOCATION.id && location.id !== "near-me"
+        ),
       ]);
     }
   }, [searchQuery.data?.locations]);
@@ -92,6 +103,9 @@ export function useServiceSearch() {
       setUserCoords(pos);
       setLocationId("near-me");
     } catch {
+      toast.danger("Please enable location services in your browser/device to use 'Near me'.", {
+        title: "Location Access Denied",
+      });
       setLocationId(NO_LOCATION.id);
       setUserCoords(null);
     } finally {

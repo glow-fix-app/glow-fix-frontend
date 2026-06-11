@@ -70,10 +70,18 @@ export const clientApi = {
   },
   deleteAvatar: () => api.delete(endpoints.users.avatar).then((res) => res.data),
 
-  // Loyalty
-  loyaltyConfig: () => api.get(endpoints.loyaltyConfig).then((res) => res.data),
-  loyaltyTransactions: () => api.get(`${endpoints.client}/loyalty_transactions`).then((res) => res.data),
-  redeemLoyaltyPoints: (data) => api.post(`${endpoints.client}/loyalty_transactions`, data).then((res) => res.data),
+  // Loyalty — all under GET/POST /loyalty/*
+  loyaltySummary: () =>
+    api.get("/loyalty/summary").then((res) => res.data),
+  loyaltyTransactions: ({ page = 1, limit = 20, type } = {}) => {
+    const params = new URLSearchParams({ page, limit });
+    if (type) params.set("type", type);
+    return api.get(`/loyalty/transactions?${params.toString()}`).then((res) => res.data);
+  },
+  loyaltyQuickRedeem: () =>
+    api.get("/loyalty/quick-redeem").then((res) => res.data),
+  loyaltyRedeem: (points) =>
+    api.post("/loyalty/redeem", { points }).then((res) => res.data),
 
   // Others
   favorites: () => api.get(`${endpoints.client}/favorites`).then((res) => res.data),
@@ -105,14 +113,111 @@ export const clientApi = {
     return api.get(`${endpoints.discover}?${params.toString()}`, { signal }).then((res) => res.data);
   },
 
-  searchServices: ({ q = "", category = "all", lat, lng, maxDistance = 50 } = {}) => {
+  searchServices: ({ q = "", category = "all", lat, lng, maxDistance = 50, locationArea = null } = {}) => {
     const params = new URLSearchParams();
-    if (q) params.set("q", q);
-    if (category) params.set("category", category);
-    if (lat != null) params.set("lat", lat);
-    if (lng != null) params.set("lng", lng);
-    if (maxDistance != null) params.set("maxDistance", maxDistance);
-    return api.get(`${endpoints.services}/search?${params.toString()}`).then((res) => res.data);
+    if (q) params.set("query", q);
+    // Only send category if it's not the "all" sentinel
+    if (category && category !== "all") params.set("category", category);
+    if (lat != null) params.set("latitude", lat);
+    if (lng != null) params.set("longitude", lng);
+    // Map maxDistance to the nested filter the backend expects
+    if (maxDistance != null && lat != null && lng != null) {
+      params.set("filters[radius]", maxDistance);
+    }
+    // Named area filter (e.g. "Zamalek") — sent alongside coordinates if both exist
+    if (locationArea) {
+      params.set("filters[locations][]", locationArea);
+    }
+
+    return api
+      .get(`${endpoints.services}/discover/search?${params.toString()}`)
+      .then((res) => {
+        const raw = res.data;
+        // raw = { data: ServiceDiscoveryResponseDto[], meta: SearchMetaDto, filters: FilterCategoriesResponseDto }
+
+        // ── Transform into shape useServiceSearch expects ──────────────────
+        const groups = (raw.data ?? []).map((service) => ({
+          serviceKey: service.service_id,
+          serviceTitle: service.service_name,
+          categoryName: service.category_name,
+          providerCount: service.provider_count ?? service.total_offers ?? 0,
+          minPriceLabel:
+            service.from_price != null
+              ? `EGP ${Math.round(service.from_price).toLocaleString("en-EG")}`
+              : "—",
+          offers: (service.offers ?? []).map((offer) => {
+            const distKm = offer.distance_km;
+            const distLabel =
+              distKm != null && distKm > 0
+                ? distKm < 1
+                  ? `${Math.round(distKm * 1000)} M AWAY`
+                  : `${distKm.toFixed(1)} KM AWAY`
+                : null;
+
+            return {
+              provider: {
+                id: offer.business_id,
+                businessName: offer.business_name,
+                address: offer.business_address,
+                reviewCount: offer.total_reviews ?? 0,
+                avgRating: offer.average_rating ?? 0,
+                isOpen: offer.is_open ?? false,
+                openLabel: offer.is_open
+                  ? offer.operating_hours_today
+                    ? `OPEN · ${offer.operating_hours_today}`
+                    : "OPEN NOW"
+                  : offer.operating_hours_today
+                  ? `CLOSED · ${offer.operating_hours_today}`
+                  : "CLOSED",
+                // Used by formatProviderLocationLine
+                distanceLabel: distLabel,
+                distance: distKm,
+              },
+              // service.id here is business_service_id so the checkout path
+              // gets the priced assignment, not the catalog service
+              service: {
+                id: offer.business_service_id,
+                priceLabel:
+                  offer.price != null
+                    ? `EGP ${Math.round(offer.price).toLocaleString("en-EG")}`
+                    : "—",
+              },
+              offerLine:
+                offer.duration_minutes != null
+                  ? `~${offer.duration_minutes} min`
+                  : null,
+            };
+          }),
+        }));
+
+        // ── meta ──────────────────────────────────────────────────────────
+        const meta = raw.meta
+          ? {
+              totalServices: raw.meta.total_services ?? 0,
+              totalOffers: raw.meta.total_offers ?? 0,
+              page: raw.meta.page ?? 1,
+              totalPages: raw.meta.total_pages ?? 1,
+            }
+          : { totalServices: groups.length, totalOffers: 0 };
+
+        // ── chips (category filter tabs) ──────────────────────────────────
+        const chips = [
+          ...(raw.filters?.categories ?? []).map((c) => ({
+            id: c.name,
+            label: c.name,
+            count: c.count,
+          })),
+        ];
+
+        // ── locations (merge with any API-provided location names) ────────
+        const locations = (raw.filters?.locations ?? []).map((l) => ({
+          id: l.name,
+          label: l.name,
+          count: l.count,
+        }));
+
+        return { groups, meta, chips, locations };
+      });
   },
 
   providerDetails: (providerId, { userLocation = null } = {}) => {

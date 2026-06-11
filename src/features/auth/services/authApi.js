@@ -32,13 +32,7 @@ export const authApi = {
   },
 
   async registerManager(payload) {
-    const res = await api.post(endpoints.auth.registerManager, {
-      fullName: payload.fullName,
-      email: payload.email,
-      phone: payload.phone || undefined,
-      password: payload.password,
-      confirmPassword: payload.confirmPassword,
-    });
+    const res = await api.post(endpoints.auth.registerManager, payload);
     return res.data;
   },
 

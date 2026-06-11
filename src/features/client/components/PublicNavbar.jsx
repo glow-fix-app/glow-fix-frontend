@@ -12,7 +12,7 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 function getUnreadCount(notifications) {
   const list = Array.isArray(notifications) ? notifications : notifications?.data;
   if (!Array.isArray(list)) return 0;
-  return list.filter((item) => !item.read && !item.is_read).length;
+  return list.filter((item) => !item.readAt).length;
 }
 
 export default function PublicNavbar() {
@@ -22,6 +22,7 @@ export default function PublicNavbar() {
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const notifications = useNotificationList();
   const unreadCount = getUnreadCount(notifications.data);
+  const unreadMessages = useSelector((state) => state.chat.unreadTotal ?? 0);
 
   function openProfile() {
     navigate(user || isAuthenticated ? "/settings" : "/auth/login");
@@ -72,7 +73,21 @@ export default function PublicNavbar() {
               radius="none"
               onPress={() => navigate("/chat")}
             >
-              <ChatBubbleLeftRightIcon className="h-6 w-6" />
+              <Badge.Anchor>
+                <ChatBubbleLeftRightIcon className="h-6 w-6" />
+                <Badge
+                  className={
+                    unreadMessages > 0
+                      ? "min-h-2.5 min-w-2.5 border-2 border-white bg-red-500 p-0"
+                      : "hidden"
+                  }
+                  color="danger"
+                  placement="top-right"
+                  size="sm"
+                >
+                  {null}
+                </Badge>
+              </Badge.Anchor>
             </Button>
 
             <Button
@@ -88,8 +103,8 @@ export default function PublicNavbar() {
                 <Badge
                   className={
                     unreadCount > 0
-                      ? undefined
-                      : "min-h-2.5 min-w-2.5 border-2 border-white bg-red-500 p-0"
+                      ? "min-h-2.5 min-w-2.5 border-2 border-white bg-red-500 p-0"
+                      : "hidden"
                   }
                   color="danger"
                   placement="top-right"

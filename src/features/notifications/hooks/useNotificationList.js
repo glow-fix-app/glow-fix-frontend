@@ -4,12 +4,12 @@ import { notificationsApi } from "@/features/notifications/services/notification
 import { queryKeys } from "@/services/queryClient";
 
 /** REST-only notifications query (no Socket.IO). Safe for navbar and layouts. */
-export function useNotificationList() {
+export function useNotificationList(params = {}) {
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
 
   return useQuery({
-    queryKey: queryKeys.notifications,
-    queryFn: notificationsApi.list,
-    enabled: false, // Disabled until backend is implemented to avoid 404 errors
+    queryKey: [...queryKeys.notifications, params],
+    queryFn: () => notificationsApi.list({ limit: 50, ...params }),
+    enabled: isAuthenticated,
   });
 }

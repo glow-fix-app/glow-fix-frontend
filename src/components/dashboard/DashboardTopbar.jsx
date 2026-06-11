@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Breadcrumbs, BreadcrumbsItem, Button } from "@heroui/react";
 import { UserAvatar } from "@/components/ui/UserAvatar";
@@ -7,6 +7,7 @@ import {
   RectangleGroupIcon,
   BellIcon,
 } from "@heroicons/react/24/outline";
+import { useNotificationList } from "@/features/notifications/hooks/useNotificationList";
 
 const LABELS = {
   admin: {
@@ -70,6 +71,11 @@ export default function DashboardTopbar({
 }) {
   const user = useSelector((state) => state.auth.user);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // Fetch only unread notifications to drive the badge count
+  const { data: notifData } = useNotificationList({ unreadOnly: true });
+  const unreadCount = notifData?.meta?.total ?? 0;
 
   const crumbs = buildCrumbs(location.pathname);
   const pageTitle = crumbs.at(-1)?.label ?? "Dashboard";
@@ -132,16 +138,20 @@ export default function DashboardTopbar({
       </div>
 
       <div className="flex items-center gap-2">
-        <Button
-          as={Link}
-          to={`/${variant}/notifications`}
-          isIconOnly
-          variant="light"
+        {/* Bell icon with live unread count badge */}
+        <button
           aria-label="Notifications"
-          className="text-gray-500 hover:text-gray-700"
+          onClick={() => navigate(`/${variant}/notifications`)}
+          className="relative flex items-center justify-center h-8 w-8 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
         >
           <BellIcon className="w-5 h-5" />
-        </Button>
+          {unreadCount > 0 && (
+            <span className="absolute top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white leading-none">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </button>
+
         <UserAvatar
           user={user}
           className="h-9 w-9 ml-2"
@@ -150,4 +160,3 @@ export default function DashboardTopbar({
     </header>
   );
 }
-

@@ -183,8 +183,8 @@ export default function ClientProfilePage() {
               {...register("phone", {
                 required: "Phone number is required",
                 pattern: {
-                  value: /^(\+20|0)?1[0125]\d{8}$/,
-                  message: "Enter a valid Egyptian mobile number (e.g., 01xxxxxxxxx)"
+                  value: /^\+?\d{7,15}$/,
+                  message: "Enter a valid phone number with 7 to 15 digits"
                 }
               })}
               placeholder="Enter phone number"

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useLogout } from "@/features/auth/hooks/useLogout";
+import { useSelector } from "react-redux";
 import { Button } from "@heroui/react";
 import logoSrc from "@/assets/images/logo.svg";
 
@@ -40,7 +41,7 @@ const ADMIN_NAV = [
   { to: "/admin/reviews", label: "Reviews", Icon: StarIcon },
   { to: "/admin/payments", label: "Payments", Icon: CreditCardIcon },
   { to: "/admin/analytics", label: "Analytics", Icon: ChartBarIcon },
-  { to: "/admin/chat", label: "Chat", Icon: ChatBubbleLeftRightIcon },
+  { to: "/admin/chat", label: "Chat", Icon: ChatBubbleLeftRightIcon, badgeKey: "chat" },
   { to: "/admin/users", label: "Admin Accounts", Icon: ShieldCheckIcon },
   { to: "/admin/settings", label: "Settings", Icon: Cog6ToothIcon },
 ];
@@ -50,7 +51,7 @@ const PROVIDER_NAV = [
   { to: "/provider/bookings", label: "Booking", Icon: CalendarDaysIcon },
   { to: "/provider/calendar", label: "Calendar", Icon: ClockIcon },
   { to: "/provider/services", label: "Services", Icon: WrenchScrewdriverIcon },
-  { to: "/provider/chat", label: "Chat", Icon: ChatBubbleLeftRightIcon },
+  { to: "/provider/chat", label: "Chat", Icon: ChatBubbleLeftRightIcon, badgeKey: "chat" },
   { to: "/provider/reviews", label: "Reviews", Icon: StarIcon },
   { to: "/provider/analytics", label: "Analytics", Icon: ChartBarIcon },
   { to: "/provider/payouts", label: "Payouts", Icon: CreditCardIcon },
@@ -82,6 +83,7 @@ function SidebarNavItem({
   collapsed,
   brand,
   onNavigate,
+  showBadge,
 }) {
   return (
     <NavLink
@@ -99,11 +101,19 @@ function SidebarNavItem({
         }`
       }
     >
-      <Icon className="w-5 h-5 shrink-0 text-current" />
+      <span className="relative shrink-0">
+        <Icon className="w-5 h-5 text-current" />
+        {showBadge && (
+          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 border border-white" />
+        )}
+      </span>
       {!collapsed && (
-        <span className="text-[14px] text-inherit truncate">
+        <span className="text-[14px] text-inherit truncate flex-1">
           {label}
         </span>
+      )}
+      {!collapsed && showBadge && (
+        <span className="ml-auto w-2 h-2 rounded-full bg-red-500 shrink-0" />
       )}
     </NavLink>
   );
@@ -116,6 +126,7 @@ function SidebarPanel({
 }) {
   const navigate = useNavigate();
   const { mutate: logout } = useLogout();
+  const unreadMessages = useSelector((state) => state.chat.unreadTotal ?? 0);
   const nav = useMemo(
     () => (variant === "admin" ? ADMIN_NAV : PROVIDER_NAV),
     [variant],
@@ -214,7 +225,7 @@ function SidebarPanel({
               </p>
             )}
             <div className="space-y-1">
-              {section.items.map(({ to, label, Icon, end }) => (
+              {section.items.map(({ to, label, Icon, end, badgeKey }) => (
                 <SidebarNavItem
                   key={to}
                   to={to}
@@ -224,6 +235,7 @@ function SidebarPanel({
                   collapsed={collapsed}
                   brand={brand}
                   onNavigate={onRequestClose}
+                  showBadge={badgeKey === "chat" && unreadMessages > 0}
                 />
               ))}
             </div>

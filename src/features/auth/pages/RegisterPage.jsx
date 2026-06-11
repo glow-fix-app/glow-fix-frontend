@@ -38,7 +38,7 @@ function mapServerRole(role) {
 function RoleSwitch({ role, onChange }) {
   const options = [
     { label: "Client Account", value: "client" },
-    { label: "Service Provider", value: "provider" },
+    { label: "Service Provider", value: "manager" },
   ];
 
   return (
@@ -100,7 +100,7 @@ export default function RegisterPage() {
   const insuranceCertificate = useWatch({ control, name: "insuranceCertificate" });
   const serviceLicense = useWatch({ control, name: "serviceLicense" });
 
-  const isProvider = role === "provider";
+  const isProvider = role === "manager";
 
   const query = new URLSearchParams(location.search);
   const oauthError = query.get("error");
@@ -156,7 +156,16 @@ export default function RegisterPage() {
       phone: values.phone,
       password: values.password,
       confirmPassword: values.confirmPassword,
-      role: values.role === "provider" ? "provider" : "client",
+      role: values.role,
+      ...(values.role === "manager" && {
+        businessName: values.businessName,
+        address: values.address,
+        branchLocation: values.branchLocation,
+        businessRegistration: values.businessRegistration,
+        ownerID: values.ownerID,
+        insuranceCertificate: values.insuranceCertificate,
+        serviceLicense: values.serviceLicense,
+      })
     };
 
     registerUser.mutate(payload, {

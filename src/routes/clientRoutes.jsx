@@ -1,4 +1,5 @@
 import ClientLayout from "@/features/client/components/ClientLayout";
+import ClientChatLayout from "@/features/client/components/ClientChatLayout";
 import BookingCheckoutPage from "@/features/client/pages/BookingCheckoutPage";
 import BookingCheckoutConfirmedPage from "@/features/client/pages/BookingCheckoutConfirmedPage";
 import BookingDetailPage from "@/features/client/pages/BookingDetailPage";
@@ -20,6 +21,14 @@ import ClientSecurityPage from "@/features/client/pages/ClientSecurityPage";
 import ClientHelpPage from "@/features/client/pages/ClientHelpPage";
 import ProviderDetailPage from "@/features/client/pages/ProviderDetailPage";
 
+// Chat gets its own layout (no footer, no container padding, full height)
+export const clientChatRoutes = {
+  element: <ClientChatLayout />,
+  children: [
+    { path: "chat", element: <ClientChatPage /> },
+  ],
+};
+
 export const clientRoutes = {
   element: <ClientLayout />,
   children: [
@@ -35,7 +44,6 @@ export const clientRoutes = {
     { path: "bookings/:bookingId/report", element: <BookingReportPage /> },
     { path: "payments", element: <ClientPaymentsPage /> },
     { path: "payments/:receiptId", element: <ClientPaymentReceiptPage /> },
-    { path: "chat", element: <ClientChatPage /> },
     { path: "notifications", element: <ClientNotificationsPage /> },
     {
       path: "settings",
@@ -51,6 +59,7 @@ export const clientRoutes = {
     },
   ],
 };
+
 
 
 

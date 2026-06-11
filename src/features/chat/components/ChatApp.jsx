@@ -1,95 +1,131 @@
-import { useState } from "react";
+import { useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { format, isToday, isYesterday } from "date-fns";
+import { useChat } from "@/features/chat/hooks/useChat";
+import { setActiveConversation } from "@/store/slices/chatSlice";
 import ChatSidebar from "./ChatSidebar";
 import ChatWindow from "./ChatWindow";
 
-const MOCK_CHATS = [
-  {
-    id: "1",
-    name: "Garage 37 Auto Service",
-    lastMessage: "Your diagnostic report is ready for...",
-    time: "12 MIN",
-    unread: 2,
-    online: true,
-    messages: [
-      {
-        id: "m1",
-        type: "system",
-        text: "BOOKING BK-10422 CONFIRMED · MON 14:00",
-      },
-      {
-        id: "m2",
-        type: "received",
-        text: "Hi Mahmoud — we've received your car. We'll start the inspection shortly.",
-        time: "MON 14:12",
-      },
-      {
-        id: "m3",
-        type: "sent",
-        text: "Thanks! Please keep me posted.",
-        time: "MON 14:14",
-      },
-      {
-        id: "m4",
-        type: "received",
-        text: "Inspection complete. Sending the report now.",
-        time: "MON 16:30",
-      },
-      {
-        id: "m5",
-        type: "received",
-        text: "Your diagnostic report is ready for review.",
-        time: "MON 16:32",
-      },
-    ],
-  },
-  {
-    id: "2",
-    name: "Shine & Co. Detailing",
-    lastMessage: "See you Saturday at 10:30!",
-    time: "2 HR",
-    unread: 0,
-    online: false,
-    messages: [],
-  },
-  {
-    id: "3",
-    name: "Drive Clinic",
-    lastMessage: "We've sent the estimate — please r...",
-    time: "YESTERDAY",
-    unread: 1,
-    online: true,
-    messages: [],
-  },
-];
+const PERSIST_KEY = "chat_active_conversation";
+
+function formatTime(dateString) {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  if (isToday(date)) return format(date, "HH:mm");
+  if (isYesterday(date)) return "Yesterday";
+  return format(date, "MMM d");
+}
 
 export default function ChatApp() {
-  const [selectedId, setSelectedId] = useState(null);
-  const selectedChat = MOCK_CHATS.find((c) => c.id === selectedId);
+  const dispatch = useDispatch();
+  const { conversations, socket } = useChat();
+
+  const currentUser = useSelector((state) => state.auth.user);
+  const conversationsData = useSelector((state) => state.chat.conversations);
+  const selectedId = useSelector((state) => state.chat.activeConversationId);
+
+  // Restore persisted conversation on first load
+  useEffect(() => {
+    const saved = sessionStorage.getItem(PERSIST_KEY);
+    if (saved) {
+      dispatch(setActiveConversation(saved));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist whenever the selected conversation changes
+  useEffect(() => {
+    if (selectedId) {
+      sessionStorage.setItem(PERSIST_KEY, selectedId);
+    } else {
+      sessionStorage.removeItem(PERSIST_KEY);
+    }
+  }, [selectedId]);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      dispatch(setActiveConversation(null));
+      sessionStorage.removeItem(PERSIST_KEY);
+    };
+  }, [dispatch]);
+
+  const handleSelect = (id) => {
+    dispatch(setActiveConversation(id));
+    if (id && socket?.connected) {
+      socket.emit("conversation.join", { conversationId: id });
+    }
+  };
+
+  const handleBack = () => {
+    if (selectedId && socket?.connected) {
+      socket.emit("conversation.leave", { conversationId: selectedId });
+    }
+    dispatch(setActiveConversation(null));
+  };
+
+  // Format conversations for the sidebar
+  const formattedChats = (conversationsData || []).map((conv) => {
+    const otherParticipant = conv.participants?.find((p) => p.userId !== currentUser?.id);
+    const name = otherParticipant?.user?.fullName || "Unknown User";
+
+    const lastMsg = conv.lastMessage;
+    let lastMessagePreview = "No messages yet";
+    if (lastMsg) {
+      if (lastMsg.deletedAt) {
+        lastMessagePreview = "Message deleted";
+      } else if (lastMsg.type === "FILE") {
+        const isImage = lastMsg.body?.url && lastMsg.body.url.match(/\.(jpeg|jpg|gif|png|webp)(\?.*)?$/i);
+        lastMessagePreview = isImage ? "📷 Photo" : "📎 File";
+      } else if (typeof lastMsg.body === "string") {
+        lastMessagePreview = lastMsg.body.length > 50 ? lastMsg.body.slice(0, 50) + "…" : lastMsg.body;
+      }
+    }
+
+    const me = conv.participants?.find((p) => p.userId === currentUser?.id);
+    const hasUnread = lastMsg
+      && lastMsg.senderUserId !== currentUser?.id
+      && (!me?.lastReadAt || new Date(lastMsg.createdAt) > new Date(me.lastReadAt));
+
+    return {
+      id: conv.id,
+      name,
+      lastMessage: lastMessagePreview,
+      time: formatTime(conv.updatedAt),
+      unread: hasUnread ? 1 : 0,
+      original: conv,
+    };
+  });
+
+  const selectedChatInfo = formattedChats.find((c) => c.id === selectedId);
 
   return (
     <div className="flex h-full w-full overflow-hidden bg-white">
-      {/* Sidebar container */}
+      {/* Sidebar — full on mobile when no chat selected, fixed width on md+ */}
       <div
-        className={`w-full md:w-[340px] shrink-0 h-full border-r border-border-default ${
-          selectedId ? "hidden md:block" : "block"
-        }`}
+        className={`shrink-0 h-full border-r border-border-default bg-white
+          ${selectedId ? "hidden md:flex md:w-[300px] lg:w-[340px]" : "flex w-full md:w-[300px] lg:w-[340px]"}
+        `}
       >
         <ChatSidebar
-          chats={MOCK_CHATS}
+          chats={formattedChats}
           selectedId={selectedId}
-          onSelect={setSelectedId}
+          onSelect={handleSelect}
+          isLoading={conversations.isLoading}
         />
       </div>
 
-      {/* Chat Window container */}
+      {/* Chat window — hidden on mobile when no chat selected */}
       <div
-        className={`flex-1 h-full ${
-          !selectedId ? "hidden md:block" : "block"
-        }`}
+        className={`flex-1 h-full min-w-0
+          ${!selectedId ? "hidden md:flex" : "flex"}
+        `}
       >
         <ChatWindow
-          selectedChat={selectedChat}
-          onBack={() => setSelectedId(null)}
+          selectedChatId={selectedId}
+          selectedChatInfo={selectedChatInfo}
+          onBack={handleBack}
+          socket={socket}
         />
       </div>
     </div>

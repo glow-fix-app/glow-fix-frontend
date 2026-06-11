@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button, ButtonGroup, Chip } from "@heroui/react";
+import { Button, ButtonGroup, Chip, Spinner } from "@heroui/react";
 import {
   CalendarDaysIcon,
   ChatBubbleLeftIcon,
@@ -7,7 +7,13 @@ import {
   StarIcon,
   ExclamationTriangleIcon,
   CheckIcon,
+  TrashIcon,
+  BellIcon
 } from "@heroicons/react/24/outline";
+import { useNotificationList } from "@/features/notifications/hooks/useNotificationList";
+import { notificationsApi } from "@/features/notifications/services/notificationsApi";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/services/queryClient";
 
 // Double checkmark SVG for "Mark all read"
 const DoubleCheckIcon = ({ className }) => (
@@ -25,108 +31,99 @@ const DoubleCheckIcon = ({ className }) => (
   </svg>
 );
 
-// Mock data based on schema and screenshot
-const STATIC_NOTIFICATIONS = [
-  {
-    id: "1",
-    type: "new_booking_request",
-    title: "New Booking Request",
-    body: "Mohamed Ali booked a Full Detail Wash for April 8",
-    timeAgo: "5 min ago",
-    read_at: null,
-    icon: CalendarDaysIcon,
-  },
-  {
-    id: "2",
-    type: "new_message",
-    title: "New Message",
-    body: "Sara Ibrahim: 'My engine has been making a strange noise'",
-    timeAgo: "15 min ago",
-    read_at: null,
-    icon: ChatBubbleLeftIcon,
-  },
-  {
-    id: "3",
-    type: "payment_received",
-    title: "Payment Received",
-    body: "EGP 350 received for booking BK-1001",
-    timeAgo: "1 hour ago",
-    read_at: null,
-    icon: CurrencyDollarIcon,
-  },
-  {
-    id: "4",
-    type: "new_review",
-    title: "New Review",
-    body: "Mohamed Ali gave you 5 stars for Full Detail Wash",
-    timeAgo: "2 hours ago",
-    read_at: "2026-05-17T12:00:00Z",
-    icon: StarIcon,
-  },
-  {
-    id: "5",
-    type: "booking_confirmed",
-    title: "Booking Confirmed",
-    body: "Hana Fathi's booking for April 8 has been confirmed",
-    timeAgo: "3 hours ago",
-    read_at: "2026-05-17T11:00:00Z",
-    icon: CalendarDaysIcon,
-  },
-  {
-    id: "6",
-    type: "platform_update",
-    title: "Platform Update",
-    body: "New analytics dashboard features are now available",
-    timeAgo: "Yesterday",
-    read_at: "2026-05-16T10:00:00Z",
-    icon: ExclamationTriangleIcon,
-  },
-  {
-    id: "7",
-    type: "payout_processed",
-    title: "Payout Processed",
-    body: "EGP 2,125 has been transferred to your bank account",
-    timeAgo: "Yesterday",
-    read_at: "2026-05-16T09:00:00Z",
-    icon: CurrencyDollarIcon,
-  },
-  {
-    id: "8",
-    type: "booking_cancelled",
-    title: "Booking Cancelled",
-    body: "Ali Nasser cancelled his Bodywork Repair booking",
-    timeAgo: "2 days ago",
-    read_at: "2026-05-15T10:00:00Z",
-    icon: CalendarDaysIcon,
-  },
-];
+function formatTimeAgo(dateString) {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now - date) / 1000);
+
+  if (diffInSeconds < 60) return "Just now";
+  
+  const formatter = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+  
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return formatter.format(-diffInMinutes, "minute");
+  
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return formatter.format(-diffInHours, "hour");
+  
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 30) return formatter.format(-diffInDays, "day");
+  
+  const diffInMonths = Math.floor(diffInDays / 30);
+  if (diffInMonths < 12) return formatter.format(-diffInMonths, "month");
+  
+  return formatter.format(-Math.floor(diffInMonths / 12), "year");
+}
+
+function getNotificationIcon(typeCode) {
+  switch (typeCode) {
+    case "BOOKING_CONFIRMED":
+    case "BOOKING_CANCELLED":
+    case "NEW_BOOKING_REQUEST":
+      return CalendarDaysIcon;
+    case "NEW_MESSAGE":
+      return ChatBubbleLeftIcon;
+    case "PAYMENT_RECEIVED":
+    case "PAYOUT_PROCESSED":
+      return CurrencyDollarIcon;
+    case "NEW_REVIEW":
+      return StarIcon;
+    case "PLATFORM_UPDATE":
+      return ExclamationTriangleIcon;
+    default:
+      return BellIcon;
+  }
+}
 
 export default function NotificationsList() {
   const [filter, setFilter] = useState("all");
-  const [notifications, setNotifications] = useState(STATIC_NOTIFICATIONS);
+  
+  // Socket is managed at the DashboardLayout level — no hook needed here
+  const queryClient = useQueryClient();
 
-  const unreadCount = notifications.filter((n) => !n.read_at).length;
+  // Query notifications based on filter
+  const { data, isLoading } = useNotificationList(
+    filter === "unread" ? { unreadOnly: true } : {}
+  );
+  
+  const notifications = data?.data || [];
+  // Using the total count from the current view or computing unread if we have all
+  const unreadCount = filter === "unread" ? data?.meta?.total : notifications.filter(n => !n.readAt).length;
 
-  const filteredNotifications = notifications.filter((n) => {
-    if (filter === "unread") return !n.read_at;
-    return true;
+  const markReadMutation = useMutation({
+    mutationFn: notificationsApi.markRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications });
+    }
+  });
+
+  const markAllReadMutation = useMutation({
+    mutationFn: notificationsApi.markAllRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: notificationsApi.deleteNotification,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications });
+    }
   });
 
   const handleMarkAllRead = () => {
-    setNotifications(
-      notifications.map((n) => ({
-        ...n,
-        read_at: n.read_at ? n.read_at : new Date().toISOString(),
-      }))
-    );
+    if (unreadCount > 0) {
+      markAllReadMutation.mutate();
+    }
   };
 
   const handleMarkAsRead = (id) => {
-    setNotifications(
-      notifications.map((n) =>
-        n.id === id ? { ...n, read_at: new Date().toISOString() } : n
-      )
-    );
+    markReadMutation.mutate(id);
+  };
+
+  const handleDelete = (id) => {
+    deleteMutation.mutate(id);
   };
 
   return (
@@ -135,7 +132,7 @@ export default function NotificationsList() {
       <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-slate-900">Notifications</h1>
-          {unreadCount > 0 && (
+          {(unreadCount > 0) && (
             <Chip
               color="primary"
               size="sm"
@@ -175,6 +172,8 @@ export default function NotificationsList() {
             className="font-medium text-slate-600 hover:bg-gray-100 px-3"
             startContent={<DoubleCheckIcon className="h-5 w-5" />}
             onPress={handleMarkAllRead}
+            isLoading={markAllReadMutation.isPending}
+            isDisabled={unreadCount === 0}
           >
             Mark all read
           </Button>
@@ -183,59 +182,74 @@ export default function NotificationsList() {
 
       {/* List */}
       <div className="flex flex-col gap-3">
-        {filteredNotifications.map((notification) => {
-          const isUnread = !notification.read_at;
-          const Icon = notification.icon;
-
-          return (
-            <div
-              key={notification.id}
-              className={`flex items-start gap-4 rounded-xl border p-4 transition-colors ${
-                isUnread
-                  ? "border-blue-100 bg-surface-page"
-                  : "border-gray-100 bg-white"
-              }`}
-            >
-              <div
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-                  isUnread
-                    ? "bg-blue-100 text-blue-600"
-                    : "bg-gray-100 text-gray-500"
-                }`}
-              >
-                <Icon className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-[15px] font-semibold text-slate-900">
-                  {notification.title}
-                </h3>
-                <p className="mt-0.5 truncate text-[14px] text-slate-600">
-                  {notification.body}
-                </p>
-                <p className="mt-1.5 text-[12px] text-slate-400">
-                  {notification.timeAgo}
-                </p>
-              </div>
-              {isUnread && (
-                <div className="flex shrink-0 self-center pr-2">
-                  <button
-                    aria-label="Mark as read"
-                    title="Mark as read"
-                    onClick={() => handleMarkAsRead(notification.id)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
-                  >
-                    <CheckIcon className="h-5 w-5" />
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        {filteredNotifications.length === 0 && (
+        {isLoading ? (
+           <div className="py-10 flex justify-center items-center">
+             <Spinner size="lg" />
+           </div>
+        ) : notifications.length === 0 ? (
           <div className="py-10 text-center text-slate-500">
             No notifications found.
           </div>
+        ) : (
+          notifications.map((notification) => {
+            const isUnread = !notification.readAt;
+            const Icon = getNotificationIcon(notification.type?.code);
+
+            return (
+              <div
+                key={notification.id}
+                className={`flex items-start gap-4 rounded-xl border p-4 transition-colors ${
+                  isUnread
+                    ? "border-blue-100 bg-surface-page"
+                    : "border-gray-100 bg-white"
+                }`}
+              >
+                <div
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                    isUnread
+                      ? "bg-blue-100 text-blue-600"
+                      : "bg-gray-100 text-gray-500"
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-[15px] font-semibold text-slate-900">
+                    {notification.title}
+                  </h3>
+                  <p className="mt-0.5 text-[14px] text-slate-600">
+                    {notification.body}
+                  </p>
+                  <p className="mt-1.5 text-[12px] text-slate-400">
+                    {formatTimeAgo(notification.createdAt)}
+                  </p>
+                </div>
+                
+                <div className="flex shrink-0 self-center pr-2 gap-2">
+                  {isUnread && (
+                    <button
+                      aria-label="Mark as read"
+                      title="Mark as read"
+                      onClick={() => handleMarkAsRead(notification.id)}
+                      disabled={markReadMutation.isPending}
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
+                    >
+                      <CheckIcon className="h-5 w-5" />
+                    </button>
+                  )}
+                  <button
+                    aria-label="Delete notification"
+                    title="Delete notification"
+                    onClick={() => handleDelete(notification.id)}
+                    disabled={deleteMutation.isPending}
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-red-100 hover:text-red-600 transition-colors"
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
     </div>

@@ -106,10 +106,10 @@ export const phoneSchema = z
       return;
     }
 
-    if (!/^\+?[1-9]\d{7,14}$/.test(cleaned)) {
+    if (!/^\+?\d{7,15}$/.test(cleaned)) {
       ctx.addIssue({
         code: "custom",
-        message: "Invalid phone number format (e.g. use +201... instead of 01...).",
+        message: "Invalid phone number format.",
       });
     }
   });

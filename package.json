@@ -16,12 +16,14 @@
     "@reduxjs/toolkit": "latest",
     "@tanstack/react-query": "latest",
     "axios": "latest",
+    "date-fns": "^4.4.0",
     "react": "latest",
     "react-dom": "latest",
     "react-hook-form": "latest",
     "react-leaflet": "^5.0.0",
     "react-redux": "latest",
     "react-router-dom": "latest",
+    "socket.io-client": "^4.8.3",
     "zod": "latest"
   },
   "devDependencies": {
