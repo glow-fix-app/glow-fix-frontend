@@ -13,6 +13,7 @@ import ProviderTabs from "@/features/client/components/provider/ProviderTabs";
 import { useProviderDetail } from "@/features/client/hooks/useProviderDetail";
 import { buildCheckoutPath, clearCheckoutConfirmedSnapshot, resetCheckout } from "@/store/slices/checkoutSlice";
 import { formatEgp } from "@/features/client/utils/formatters";
+import { ROUTE_PATHS } from "@/routes/paths";
 
 export default function ProviderDetailPage() {
   const { providerId } = useParams();
@@ -23,9 +24,11 @@ export default function ProviderDetailPage() {
   const { provider, isLoading, error } = useProviderDetail(providerId);
 
   const handleDirections = () => {
-    if (provider?.lat == null || provider?.lng == null) return;
+    const lat = provider?.latitude ?? provider?.lat;
+    const lng = provider?.longitude ?? provider?.lng;
+    if (lat == null || lng == null) return;
     window.open(
-      `https://www.google.com/maps/dir/?api=1&destination=${provider.lat},${provider.lng}`,
+      `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
       "_blank",
       "noopener,noreferrer"
     );
@@ -59,7 +62,7 @@ export default function ProviderDetailPage() {
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <button
             type="button"
-            onClick={() => navigate("/services")}
+            onClick={() => navigate(ROUTE_PATHS.SERVICES)}
             className="mb-6 flex items-center gap-2 text-[13px] font-semibold text-text-tertiary hover:text-text-primary"
           >
             <ArrowLeftIcon className="h-4 w-4" />
@@ -71,7 +74,7 @@ export default function ProviderDetailPage() {
             action={
               <button
                 type="button"
-                onClick={() => navigate("/services")}
+                onClick={() => navigate(ROUTE_PATHS.SERVICES)}
                 className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white"
               >
                 Browse providers

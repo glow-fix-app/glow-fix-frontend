@@ -32,7 +32,7 @@ export default function BookingReportPage() {
   });
 
   // Get first report from booking
-  const reportId = booking?.diagnostic_reports?.[0]?.id;
+  const reportId = booking?.diagnostic_report?.id;
 
   // Fetch full report with findings & repairs
   const {
@@ -47,13 +47,14 @@ export default function BookingReportPage() {
   });
 
   // ── Derived data ────────────────────────────────────────────────────────────
-  const findings = report?.report_findings || [];
+  const findings = report?.findings || [];
   const repairs = report?.recommended_repairs || [];
-  const providerName = booking?.branch?.business_name || "Service Provider";
-  const bookingCode = booking?.booking_code || booking?.id;
+  const providerName = booking?.business?.businessName || booking?.branch?.business_name || "Service Provider";
+  const providerId = booking?.business?.id || booking?.branch?.id;
+  const bookingCode = booking?.id || booking?.booking_code;
   const scheduledLabel = formatDateTime(booking?.scheduled_at);
   const status = (booking?.status || "pending").toLowerCase();
-  const hasPaidPayment = (booking?.payments || []).some(
+  const hasPaidPayment = booking?.payment?.status === "PAID" || (booking?.payments || []).some(
     (p) => p.status === "PAID"
   );
 
@@ -166,7 +167,7 @@ export default function BookingReportPage() {
           </h1>
           <p className="text-[12px] uppercase tracking-wider text-text-muted">
             Submitted {formatDateTime(report.created_at).toUpperCase()} · Valid 72 hours
-            {report.estimated_time && ` · Est. Repair Time: ${report.estimated_time}`}
+            {report.estimated_duration && ` · Est. Repair Time: ${report.estimated_duration} hours`}
           </p>
         </div>
       </div>
@@ -232,8 +233,8 @@ export default function BookingReportPage() {
             {/* Count & Time */}
             <div className="flex items-center justify-between text-[12px] text-text-muted mb-5">
               <span>{selectedRepairs.size} of {repairs.length} repairs selected</span>
-              {selectedRepairs.size > 0 && report.estimated_time && (
-                <span className="font-medium text-brand-600">Est. {report.estimated_time}</span>
+              {selectedRepairs.size > 0 && report.estimated_duration && (
+                <span className="font-medium text-brand-600">Est. {report.estimated_duration} hours</span>
               )}
             </div>
 
@@ -244,19 +245,23 @@ export default function BookingReportPage() {
             <div className="space-y-3">
               <Button
                 isDisabled={selectedRepairs.size === 0}
-                onPress={() =>
-                  navigate(ROUTE_PATHS.BOOKING_PAY(bookingId), {
-                    state: {
-                      selectedRepairIds: [...selectedRepairs],
-                      repairsCost: selectedTotal,
-                      selectedRepairItems: repairs.filter((r) => selectedRepairs.has(r.id)),
-                      estimatedRepairTime: report.estimated_time,
-                    },
-                  })
-                }
+                onPress={() => {
+                  const selectedItems = repairs.filter((r) => selectedRepairs.has(r.id));
+                  const serviceIds = selectedItems
+                    .map(item => item.business_service_id)
+                    .filter(Boolean);
+                    
+                  if (providerId) {
+                    const params = new URLSearchParams();
+                    if (serviceIds.length > 0) {
+                      params.set("services", serviceIds.join(","));
+                    }
+                    navigate(`${ROUTE_PATHS.CHECKOUT(providerId)}?${params.toString()}`);
+                  }
+                }}
                 className="w-full h-[44px] rounded-full text-[12px] flex items-center justify-center transition-all bg-success hover:bg-success/90 text-white disabled:bg-gray-300 disabled:text-text-muted disabled:cursor-not-allowed"
               >
-                Accept · pay
+                Accept & book
               </Button>
 
               <Button

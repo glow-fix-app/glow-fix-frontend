@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -8,18 +8,20 @@ import { clientApi } from "@/features/client/services/clientApi";
 import { useProviderDetail } from "@/features/client/hooks/useProviderDetail";
 import { useVehicles } from "@/features/client/hooks/useVehicles";
 import { ROUTE_PATHS } from "@/routes/paths";
+import { toast } from "@heroui/react";
 import {
   buildScheduledAt,
   CHECKOUT_FLOW_PARAM,
-  CHECKOUT_FLOW_REVIEW,
   formatDateLabel,
-  generateTimeSlots,
-  getAvailableDays,
+  getNext7Days,
   parseServiceIds,
   persistCheckoutConfirmedSnapshot,
   resolveCheckoutServices,
   setCheckoutSuccessBooking,
 } from "@/store/slices/checkoutSlice";
+
+const CHECKOUT_FLOW_REVIEW = "review";
+export { CHECKOUT_FLOW_REVIEW };
 
 export function useBookingCheckout() {
   const { providerId } = useParams();
@@ -28,10 +30,12 @@ export function useBookingCheckout() {
   const dispatch = useDispatch();
   const queryClient = useQueryClient();
   const [submitError, setSubmitError] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
   const [vehicleModalOpen, setVehicleModalOpen] = useState(false);
 
   const serviceIds = useMemo(() => parseServiceIds(searchParams), [searchParams]);
-  const initialStep = searchParams.get(CHECKOUT_FLOW_PARAM) === CHECKOUT_FLOW_REVIEW ? 2 : 1;
+  const flowParam = searchParams.get(CHECKOUT_FLOW_PARAM);
+  const initialStep = flowParam === CHECKOUT_FLOW_REVIEW ? 2 : 1;
   const [step, setStep] = useState(initialStep);
 
   const providerQuery = useProviderDetail(providerId);
@@ -44,14 +48,15 @@ export function useBookingCheckout() {
   );
 
   const dates = useMemo(
-    () => getAvailableDays(provider?.operatingHours),
-    [provider?.operatingHours]
+    () => getNext7Days(),
+    []
   );
 
   const form = useForm({
     defaultValues: {
+      dateTimeValue: null,
       selectedDate: null,
-      selectedTime: "",
+      selectedTime: "09:00",
       selectedVehicleId: "",
       notes: "",
       photos: [],
@@ -62,26 +67,20 @@ export function useBookingCheckout() {
   const selectedTime = form.watch("selectedTime");
   const selectedVehicleId = form.watch("selectedVehicleId");
 
-  useEffect(() => {
-    if (!selectedDate && dates[0]) {
-      form.setValue("selectedDate", dates[0], { shouldValidate: true });
-    }
-  }, [dates, form, selectedDate]);
+  // No auto-date selection needed — DatePicker handles it
 
-  const timeSlots = useMemo(() => {
-    if (!selectedDate) return [];
-    const dayHours = provider?.operatingHours?.find(
-      (entry) => entry.dayOfWeek === selectedDate.getDay()
-    );
-    if (dayHours?.isClosed) return [];
-    return generateTimeSlots(dayHours?.openTime || "09:00", dayHours?.closeTime || "17:00");
-  }, [provider?.operatingHours, selectedDate]);
-
-  useEffect(() => {
-    if (timeSlots.length > 0 && !timeSlots.includes(selectedTime)) {
-      form.setValue("selectedTime", timeSlots[0], { shouldValidate: true });
+  const timeError = useMemo(() => {
+    if (!selectedDate || !selectedTime || !provider?.operating_hours) return "";
+    const dayOfWeek = selectedDate.getDay();
+    const oh = provider.operating_hours.find((h) => h.dayOfWeek === dayOfWeek);
+    if (!oh || (!oh.openTime && !oh.closeTime)) return "Provider is closed on this day.";
+    if (oh.openTime && oh.closeTime) {
+      if (selectedTime < oh.openTime || selectedTime > oh.closeTime) {
+        return `Please select a time between ${oh.openTime} and ${oh.closeTime}.`;
+      }
     }
-  }, [form, selectedTime, timeSlots]);
+    return "";
+  }, [selectedDate, selectedTime, provider?.operatingHours]);
 
   const bookingMutation = useMutation({
     mutationFn: (payload) => clientApi.createBooking(payload),
@@ -95,7 +94,13 @@ export function useBookingCheckout() {
       });
     },
     onError: (error) => {
-      setSubmitError(error?.response?.data?.message || "Failed to confirm booking.");
+      const respData = error?.response?.data;
+      // Handle the NestJS global exception filter format: { error: { message: ... } }
+      let msg = respData?.error?.message || respData?.message || "Failed to confirm booking.";
+      if (Array.isArray(msg)) {
+        msg = msg.join(", ");
+      }
+      setSubmitError(msg);
     },
   });
 
@@ -107,7 +112,10 @@ export function useBookingCheckout() {
   };
 
   const goToReviewStep = () => {
-    if (!selectedVehicleId) return;
+    if (timeError) {
+      toast.danger(timeError);
+      return;
+    }
     setSubmitError("");
     setStep(2);
     const next = new URLSearchParams(searchParams);
@@ -115,21 +123,37 @@ export function useBookingCheckout() {
     setSearchParams(next, { replace: true });
   };
 
-  const submitBooking = form.handleSubmit((values) => {
+  const submitBooking = form.handleSubmit(async (values) => {
     if (!providerId || services.length === 0 || !values.selectedDate || !values.selectedTime) return;
     setSubmitError("");
+
+    // Upload photos first (if any), then create booking with the returned CDN URLs
+    let imageUrls = [];
+    if (values.photos && values.photos.length > 0) {
+      setIsUploading(true);
+      try {
+        imageUrls = await clientApi.uploadBookingImages(values.photos);
+      } catch {
+        setSubmitError("Failed to upload photos. Please try again.");
+        setIsUploading(false);
+        return;
+      }
+      setIsUploading(false);
+    }
+
     bookingMutation.mutate({
-      branchId: providerId,
-      serviceIds: services.map((service) => service.id),
-      scheduledAt: buildScheduledAt(values.selectedDate, values.selectedTime),
-      notes: values.notes,
+      businessId: providerId,
       vehicleId: values.selectedVehicleId || null,
+      items: services.map((service) => ({ businessServiceId: service.id })),
+      scheduledAt: buildScheduledAt(values.selectedDate, values.selectedTime),
+      note: values.notes || undefined,
+      images: imageUrls,
     });
   });
 
   const dateLabel = selectedDate ? formatDateLabel(selectedDate) : "";
   const canContinue = Boolean(selectedDate && selectedTime && selectedVehicleId);
-  const canSubmit = canContinue && services.length > 0;
+  const canSubmit = canContinue && services.length > 0 && !timeError;
 
   let view = "ready";
   if (providerQuery.isLoading || vehiclesQuery.isLoading) view = "loading";
@@ -141,29 +165,27 @@ export function useBookingCheckout() {
     step,
     form,
     shellProps: {
-      backLabel: provider ? "Back to provider" : "Back to services",
-      onBack: () =>
-        navigate(providerId ? ROUTE_PATHS.PROVIDER_DETAIL(providerId) : ROUTE_PATHS.SERVICES),
       category: services[0]?.category || null,
       title: provider?.businessName || "Checkout",
     },
     providerId,
     providerName: provider?.businessName || "",
     services,
-    dates,
-    timeSlots,
+    operatingHours: provider?.operatingHours || [],
     vehicles: vehiclesQuery.data ?? [],
     dateLabel,
     timeLabel: selectedTime,
     canContinue,
     canSubmit,
     showVehicleWarning: !selectedVehicleId,
+    timeError,
     submitError,
-    isSubmitting: bookingMutation.isPending,
+    isUploading,
+    isSubmitting: isUploading || bookingMutation.isPending,
     vehicleModalOpen,
     setVehicleModalOpen,
-    goToReviewStep,
     goToDateTimeStep,
+    goToReviewStep,
     submitBooking,
   };
 }

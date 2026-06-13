@@ -10,7 +10,7 @@ const roleHomePaths = {
 const rolePathPrefixes = {
   [ROLES.ADMIN]: ["/admin"],
   [ROLES.MANAGER]: ["/provider"],
-  [ROLES.CLIENT]: ["/", "/services", "/browse", "/checkout", "/bookings", "/payments", "/chat", "/notifications", "/billing", "/help", "/settings", "/profile"],
+  [ROLES.CLIENT]: ["/", "/providers", "/browse", "/checkout", "/bookings", "/payments", "/chat", "/notifications", "/billing", "/help", "/settings", "/profile"],
 };
 
 export function getAuthRedirectPath(role) {

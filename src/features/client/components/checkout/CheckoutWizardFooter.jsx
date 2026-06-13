@@ -3,18 +3,24 @@ import { Button } from "@heroui/react";
 
 export default function CheckoutWizardFooter({
   step,
+  totalSteps = 3,
   canContinue,
   isSubmitting,
+  isUploading,
   canSubmit,
   onBackStep,
   onContinue,
+  onConfirm,
   vehicleWarning,
   errorMessage,
 }) {
+  const isLastStep = step === totalSteps;
+
   return (
     <>
       <div className="mt-10 flex items-center justify-between">
-        {step === 2 ? (
+        {/* Back button — shown on steps 2+ */}
+        {step > 1 ? (
           <Button
             type="button"
             variant="outline"
@@ -28,10 +34,11 @@ export default function CheckoutWizardFooter({
           <span />
         )}
 
-        {step === 1 ? (
+        {/* Continue / Confirm button */}
+        {!isLastStep ? (
           <Button
             type="button"
-            isDisabled={!canContinue}
+            isDisabled={step === 1 && !canContinue}
             className="h-11 rounded-full bg-brand-500 px-6 text-[13px] font-semibold text-white hover:bg-brand-600 disabled:opacity-40"
             onPress={onContinue}
           >
@@ -40,13 +47,14 @@ export default function CheckoutWizardFooter({
           </Button>
         ) : (
           <Button
-            type="submit"
+            type="button"
             isLoading={isSubmitting}
             isDisabled={!canSubmit || isSubmitting}
             className="h-11 rounded-full bg-brand-500 px-6 text-[13px] font-semibold text-white hover:bg-brand-600 disabled:opacity-40"
+            onPress={onConfirm}
           >
-            {isSubmitting ? "Confirming…" : "Confirm booking"}
-            {!isSubmitting && <ClockIcon className="ml-1.5 h-4 w-4" />}
+          {isUploading ? "Uploading photos…" : isSubmitting ? "Confirming…" : "Confirm booking"}
+          {!isSubmitting && <ClockIcon className="ml-1.5 h-4 w-4" />}
           </Button>
         )}
       </div>
@@ -55,3 +63,4 @@ export default function CheckoutWizardFooter({
     </>
   );
 }
+

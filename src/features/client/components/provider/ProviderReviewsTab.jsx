@@ -80,6 +80,22 @@ export default function ProviderReviewsTab({ reviews = [], avgRating = 0, review
   // Calculate dynamic review count label
   const totalReviews = reviewCount || reviews.length;
 
+  const qualityRatings = reviews.filter((r) => r.qualityRating != null || r.quality_rating != null);
+  const punctualityRatings = reviews.filter((r) => r.punctualityRating != null || r.punctuality_rating != null);
+  const communicationRatings = reviews.filter((r) => r.communicationRating != null || r.communication_rating != null);
+
+  const avgQuality = qualityRatings.length > 0 
+    ? qualityRatings.reduce((sum, r) => sum + (r.qualityRating ?? r.quality_rating), 0) / qualityRatings.length 
+    : avgRating || 5.0;
+
+  const avgPunctuality = punctualityRatings.length > 0 
+    ? punctualityRatings.reduce((sum, r) => sum + (r.punctualityRating ?? r.punctuality_rating), 0) / punctualityRatings.length 
+    : avgRating || 5.0;
+
+  const avgCommunication = communicationRatings.length > 0 
+    ? communicationRatings.reduce((sum, r) => sum + (r.communicationRating ?? r.communication_rating), 0) / communicationRatings.length 
+    : avgRating || 5.0;
+
   return (
     <div className="grid gap-6">
       {/* Dynamic Rating Overview Section */}
@@ -108,25 +124,25 @@ export default function ProviderReviewsTab({ reviews = [], avgRating = 0, review
             <div className="flex items-center justify-between gap-4">
               <span className="w-24 text-[10px] font-medium tracking-wider text-text-muted uppercase shrink-0">Quality</span>
               <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-amber-500 rounded-full" style={{ width: "98%" }} />
+                <div className="h-full bg-amber-500 rounded-full" style={{ width: `${(avgQuality / 5) * 100}%` }} />
               </div>
-              <span className="w-8 text-right text-[12px] font-semibold text-text-primary shrink-0">4.9</span>
+              <span className="w-8 text-right text-[12px] font-semibold text-text-primary shrink-0">{avgQuality.toFixed(1)}</span>
             </div>
             
             <div className="flex items-center justify-between gap-4">
               <span className="w-24 text-[10px] font-medium tracking-wider text-text-muted uppercase shrink-0">Communication</span>
               <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-amber-500 rounded-full" style={{ width: "96%" }} />
+                <div className="h-full bg-amber-500 rounded-full" style={{ width: `${(avgCommunication / 5) * 100}%` }} />
               </div>
-              <span className="w-8 text-right text-[12px] font-semibold text-text-primary shrink-0">4.8</span>
+              <span className="w-8 text-right text-[12px] font-semibold text-text-primary shrink-0">{avgCommunication.toFixed(1)}</span>
             </div>
 
             <div className="flex items-center justify-between gap-4">
               <span className="w-24 text-[10px] font-medium tracking-wider text-text-muted uppercase shrink-0">On-time rate</span>
               <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-amber-500 rounded-full" style={{ width: "94%" }} />
+                <div className="h-full bg-amber-500 rounded-full" style={{ width: `${(avgPunctuality / 5) * 100}%` }} />
               </div>
-              <span className="w-8 text-right text-[12px] font-semibold text-text-primary shrink-0">4.7</span>
+              <span className="w-8 text-right text-[12px] font-semibold text-text-primary shrink-0">{avgPunctuality.toFixed(1)}</span>
             </div>
           </div>
         </div>

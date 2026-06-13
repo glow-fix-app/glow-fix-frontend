@@ -10,11 +10,9 @@ export default function BookingSuccess({ booking, onGoToBookings }) {
       </div>
       <h2 className="mt-6 text-2xl font-semibold text-text-primary">Booking Confirmed!</h2>
       <p className="mt-2 text-[14px] text-text-tertiary">
-        Your booking{" "}
-        <span className="font-semibold text-text-primary">{booking.bookingCode}</span> has been submitted
-        at <span className="font-semibold text-text-primary">{booking.providerName}</span>.
+        Your booking has been successfully submitted!
       </p>
-      <p className="mt-1 text-[13px] text-text-muted">Total: {formatPrice(booking.totalPrice)}</p>
+      <p className="mt-1 text-[13px] text-text-muted">Booking ID: <span className="font-semibold text-text-primary">{booking?.id}</span></p>
       <div className="mt-8 flex items-center justify-center gap-4">
         <Button
           className="h-11 rounded-full bg-brand-500 px-6 text-[13px] font-semibold text-white hover:bg-brand-600"

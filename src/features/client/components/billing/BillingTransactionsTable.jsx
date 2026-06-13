@@ -68,8 +68,8 @@ export default function BillingTransactionsTable() {
   const transactions = payments.map((p) => ({
     id: p.id,
     dateLabel: p.paid_at ? formatDateShort(p.paid_at) : "Pending",
-    provider: p.booking?.branch?.business_name || "Service Provider",
-    service: p.type === "SERVICE" ? "Booking Payment" : "Other",
+    provider: p.booking?.business?.businessName || "Service Provider",
+    service: "Booking Payment",
     amount: p.amount,
     status: p.status, // PAID, PENDING, CANCELLED
   }));

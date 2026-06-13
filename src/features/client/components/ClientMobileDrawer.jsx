@@ -17,7 +17,7 @@ import logo from "@/assets/images/logo.svg";
 export const CLIENT_NAV = [
   { to: "/", label: "Home", Icon: HomeIcon, end: true },
   { to: "/browse", label: "Services", Icon: MagnifyingGlassIcon },
-  { to: "/services", label: "Discover", Icon: MapIcon },
+  { to: "/providers", label: "Discover", Icon: MapIcon },
   { to: "/bookings", label: "Bookings", Icon: CalendarDaysIcon },
   { to: "/payments", label: "Payments", Icon: CreditCardIcon },
 ];

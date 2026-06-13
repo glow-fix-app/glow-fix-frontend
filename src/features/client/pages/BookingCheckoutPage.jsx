@@ -19,20 +19,21 @@ export default function BookingCheckoutPage() {
     providerId,
     providerName,
     services,
-    dates,
-    timeSlots,
+    operatingHours,
     vehicles,
     dateLabel,
     timeLabel,
     canContinue,
     canSubmit,
     showVehicleWarning,
+    timeError,
     submitError,
+    isUploading,
     isSubmitting,
     vehicleModalOpen,
     setVehicleModalOpen,
-    goToReviewStep,
     goToDateTimeStep,
+    goToReviewStep,
     submitBooking,
   } = useBookingCheckout();
 
@@ -68,36 +69,73 @@ export default function BookingCheckoutPage() {
     );
   }
 
-  const vehicleWarning = showVehicleWarning ? (
-    <p className="mt-4 text-[13px] text-amber-600 font-medium flex items-center gap-1.5">
-      <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
-      Please select or add a vehicle to continue.
-    </p>
-  ) : null;
+  const vehicleWarning =
+    step === 1 && showVehicleWarning ? (
+      <p className="mt-4 text-[13px] text-amber-600 font-medium flex items-center gap-1.5">
+        <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
+        Please select a vehicle and a date/time to continue.
+      </p>
+    ) : null;
 
   const errorMessage = submitError ? (
     <p className="mt-4 text-[13px] text-red-500 font-medium">{submitError}</p>
   ) : null;
 
+  const steps = [
+    { n: 1, label: "Details" },
+    { n: 2, label: "Review" },
+  ];
+
   return (
     <CheckoutShell {...shellProps}>
       <FormProvider {...form}>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (step === 2) submitBooking();
-          }}
-        >
+        <form onSubmit={(e) => e.preventDefault()}>
+          {/* Step indicator */}
+          <div className="mb-8 flex items-center gap-2">
+            {steps.map(({ n, label }, i, arr) => (
+              <div key={n} className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold transition-colors ${
+                      step === n
+                        ? "bg-brand-500 text-white"
+                        : step > n
+                        ? "bg-brand-500/20 text-brand-600"
+                        : "bg-gray-100 text-text-muted"
+                    }`}
+                  >
+                    {step > n ? "✓" : n}
+                  </span>
+                  <span
+                    className={`hidden text-[12px] font-medium sm:block ${
+                      step === n ? "text-text-primary" : "text-text-muted"
+                    }`}
+                  >
+                    {label}
+                  </span>
+                </div>
+                {i < arr.length - 1 && (
+                  <div
+                    className={`h-px w-8 transition-colors ${
+                      step > n ? "bg-brand-500/40" : "bg-gray-200"
+                    }`}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_320px]">
             <div>
-              {step === 1 ? (
+              {step === 1 && (
                 <DateTimeStep
-                  dates={dates}
-                  timeSlots={timeSlots}
+                  operatingHours={operatingHours}
                   vehicles={vehicles}
+                  timeError={timeError}
                   onAddVehicleClick={() => setVehicleModalOpen(true)}
                 />
-              ) : (
+              )}
+              {step === 2 && (
                 <ReviewStep
                   providerName={providerName}
                   services={services}
@@ -108,11 +146,14 @@ export default function BookingCheckoutPage() {
 
               <CheckoutWizardFooter
                 step={step}
+                totalSteps={2}
                 canContinue={canContinue}
                 isSubmitting={isSubmitting}
+                isUploading={isUploading}
                 canSubmit={canSubmit}
-                onBackStep={goToDateTimeStep}
-                onContinue={goToReviewStep}
+                onBackStep={step === 2 ? goToDateTimeStep : undefined}
+                onContinue={step === 1 ? goToReviewStep : undefined}
+                onConfirm={step === 2 ? submitBooking : undefined}
                 vehicleWarning={vehicleWarning}
                 errorMessage={errorMessage}
               />

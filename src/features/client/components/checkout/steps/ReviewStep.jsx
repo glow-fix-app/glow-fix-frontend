@@ -1,29 +1,19 @@
 import { Card } from "@heroui/react";
-import { PhotoIcon } from "@heroicons/react/24/outline";
 import { useFormContext } from "react-hook-form";
+import { PhotoIcon, ChatBubbleLeftEllipsisIcon } from "@heroicons/react/24/outline";
 
 export default function ReviewStep({ providerName, services, dateLabel, timeLabel }) {
-  const { register, watch, setValue } = useFormContext();
+  const { watch } = useFormContext();
+  const notes = watch("notes") || "";
   const photos = watch("photos") || [];
 
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files || []);
-    if (photos.length + files.length > 5) return;
-    setValue("photos", [...photos, ...files.slice(0, 5 - photos.length)], { shouldValidate: true });
-  };
-
-  const removePhoto = (index) => {
-    setValue(
-      "photos",
-      photos.filter((_, i) => i !== index),
-      { shouldValidate: true }
-    );
-  };
-
   return (
-    <div className="space-y-8">
-      <p className="text-[15px] font-semibold text-text-primary">Review your booking</p>
+    <div className="space-y-6">
+      <p className="text-[15px] font-semibold text-text-primary">
+        Review your booking
+      </p>
 
+      {/* Booking summary */}
       <Card className="overflow-hidden border-none shadow-none ring-1 ring-black/[0.06] rounded-2xl">
         <div className="divide-y divide-gray-100">
           <div className="flex items-center justify-between px-6 py-4">
@@ -51,55 +41,42 @@ export default function ReviewStep({ providerName, services, dateLabel, timeLabe
         </div>
       </Card>
 
-      <div>
-        <p className="text-[15px] font-semibold text-text-primary">Notes (optional)</p>
-        <textarea
-          rows={4}
-          {...register("notes")}
-          placeholder="Describe what you need..."
-          className="mt-3 w-full resize-none rounded-2xl border border-border-default bg-surface-hover px-5 py-4 text-[14px] text-text-primary placeholder:text-text-muted outline-none focus:border-brand-500/40 focus:ring-1 focus:ring-brand-500/20 transition-all"
-        />
-      </div>
+      {/* Notes preview (read-only) */}
+      {notes && (
+        <div className="rounded-2xl border border-border-default bg-surface-hover px-5 py-4 flex gap-3">
+          <ChatBubbleLeftEllipsisIcon className="h-5 w-5 text-text-muted flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1">Note</p>
+            <p className="text-[13px] text-text-primary whitespace-pre-wrap">{notes}</p>
+          </div>
+        </div>
+      )}
 
-      <div>
-        <p className="text-[15px] font-semibold text-text-primary">Photos (optional, up to 5)</p>
-        {photos.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-3">
+      {/* Photos preview (read-only) */}
+      {photos.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <PhotoIcon className="h-4 w-4 text-text-muted" />
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+              Photos ({photos.length})
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
             {photos.map((photo, i) => (
               <div
                 key={`${photo.name}-${i}`}
-                className="relative group h-20 w-20 rounded-xl overflow-hidden ring-1 ring-black/5"
+                className="h-20 w-20 rounded-xl overflow-hidden ring-1 ring-black/5"
               >
                 <img
                   src={URL.createObjectURL(photo)}
                   alt=""
                   className="h-full w-full object-cover"
                 />
-                <button
-                  type="button"
-                  onClick={() => removePhoto(i)}
-                  className="absolute inset-0 flex items-center justify-center bg-black/40 text-white text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                >
-                  Remove
-                </button>
               </div>
             ))}
           </div>
-        )}
-        {photos.length < 5 && (
-          <label className="mt-3 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border-default bg-surface-hover px-6 py-8 text-center transition-colors hover:border-brand-500/30 hover:bg-brand-500/[0.02]">
-            <PhotoIcon className="h-6 w-6 text-text-muted" />
-            <span className="text-[13px] font-medium text-text-tertiary">Add photos</span>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={handleFileChange}
-            />
-          </label>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

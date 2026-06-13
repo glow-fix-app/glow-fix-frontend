@@ -76,7 +76,7 @@ export default function ProviderHeader({ provider, onDirections }) {
           <button
             type="button"
             onClick={onDirections}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-border-default bg-white px-5 text-[13px] font-semibold text-text-primary shadow-sm transition-colors hover:bg-surface-hover"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-border-default bg-white px-5 text-[13px] font-semibold text-text-primary shadow-sm transition-colors hover:bg-surface-hover cursor-pointer"
           >
             <PaperAirplaneIcon className="h-4 w-4 text-text-tertiary" />
             Directions

@@ -37,8 +37,14 @@ export function useServiceSearch() {
   const locationArea =
     locationId !== NO_LOCATION.id && locationId !== "near-me" ? locationId : null;
 
-  // Always send the active user location so distance is calculated for all results
-  const coords = userLocation || { lat: null, lng: null };
+  // Only attach coordinates when the user explicitly wants location-based results.
+  // When "All locations" is selected we must NOT send lat/lng, otherwise the
+  // backend's default 20 km radius filter silently hides distant providers.
+  const locationActive = locationId !== NO_LOCATION.id;
+  const coords =
+    locationActive && userLocation
+      ? { lat: userLocation.lat, lng: userLocation.lng }
+      : { lat: null, lng: null };
 
   const searchQuery = useQuery({
     queryKey: [

@@ -14,11 +14,12 @@ function vehicleLabel(vehicle) {
   return label || null;
 }
 
-function serviceLinesFromItems(bookingItems = []) {
-  return bookingItems
+function serviceLinesFromItems(items = []) {
+  // Handle both new backend shape (items[].serviceTitle) and old shape (booking_items[].service_name)
+  return items
     .map((it) => ({
-      id: it.id || `${it.service_id || it.title}`,
-      title: it.service_name || it.title || it.name || "Service",
+      id: it.id || `${it.businessServiceId || it.service_id || it.title}`,
+      title: it.serviceTitle || it.service_name || it.title || it.name || "Service",
       price: Number(it.price) || 0,
     }))
     .filter((line) => line.title);
@@ -54,34 +55,51 @@ function chatMessagesFromBooking(booking) {
 
 /** Derived UI state for booking detail — lives in the hook, not a separate lib file. */
 function buildBookingDetailView(booking, bookingId) {
-  const status = String(booking?.status ?? "pending").toLowerCase();
-  const payments = booking?.payments ?? [];
-  const bookingItems = booking?.booking_items ?? [];
-  const diagnosticReports = booking?.diagnostic_reports ?? [];
-  const paidPayment = payments.find((p) => p.status === PAID);
-  const deliveryAt = booking?.ready_at || booking?.completed_at || booking?.delivery_date;
+  // Backend returns status in UPPER_SNAKE_CASE (PENDING, CONFIRMED, etc.)
+  const statusRaw = booking?.status ?? "PENDING";
+  const status = String(statusRaw).toLowerCase();
+
+  // New backend: payment is a single object (not an array), diagnostic reports TBD
+  const payment = booking?.payment ?? null;
+  // items is the backend field name (new); fall back to booking_items (legacy)
+  const bookingItems = booking?.items ?? booking?.booking_items ?? [];
+  const diagnosticReport = booking?.diagnostic_report ?? null;
+  const diagnosticReports = diagnosticReport ? [diagnosticReport] : (booking?.diagnostic_reports ?? []);
+
+  const isPaid = payment?.status === PAID || String(payment?.status ?? "").toUpperCase() === PAID;
+  const deliveryAt = booking?.expected_delivery_at || booking?.ready_at || booking?.completed_at;
+
+  // Support both new backend (b.business.businessName) and old (b.branch.business_name)
+  const business = booking?.business ?? booking?.branch ?? {};
+  const providerName = business.businessName ?? business.business_name ?? null;
+  const address = business.address ?? null;
+  const providerUserId = business.managerId ?? null;
 
   return {
     bookingId,
     status,
     stepIndex: getStepIndex(status),
-    providerName: booking?.branch?.business_name ?? null,
-    bookingCode: booking?.booking_code ?? booking?.id ?? bookingId,
-    address: booking?.branch?.address ?? null,
+    providerName,
+    providerUserId,
+    bookingCode: booking?.id ?? bookingId,
+    address,
     vehicleLabel: vehicleLabel(booking?.vehicle),
     scheduledLabel: formatDateTime(booking?.scheduled_at) || null,
     deliveryLabel: deliveryAt ? formatDateTime(deliveryAt) : null,
-    notes: booking?.notes?.trim() || null,
+    // New backend uses a single `note` string; old used a `notes` string
+    notes: (booking?.note ?? booking?.notes ?? "").trim() || null,
     serviceLines: serviceLinesFromItems(bookingItems),
     visibleServiceLimit: VISIBLE_SERVICES,
     diagnosticReports,
     primaryReport: diagnosticReports[0] ?? null,
     hasDiagnosticReport: diagnosticReports.length > 0,
-    hasPaidPayment: Boolean(paidPayment),
-    paidPaymentId: paidPayment?.id ?? null,
-    needsPayment: status === "confirmed" && !paidPayment,
+    hasPaidPayment: isPaid,
+    paidPaymentId: isPaid ? payment?.id : null,
+    needsPayment: status === "confirmed" && !isPaid,
     isCancellable: status === "confirmed" || status === "pending",
-    isCancelled: status === "cancelled",
+    isCancelled: status === "cancelled" || status === "rejected",
+    cancellationReason: booking?.cancellation_reason || null,
+    rejectionReason: booking?.rejection_reason || null,
     totalFormatted: booking?.total_price,
     chatMessages: chatMessagesFromBooking(booking),
   };

@@ -33,8 +33,8 @@ export const clientRoutes = {
   element: <ClientLayout />,
   children: [
     { index: true, element: <ClientHomePage /> },
-    { path: "services/:providerId", element: <ProviderDetailPage /> },
-    { path: "services", element: <ClientDiscoverPage /> },
+    { path: "providers/:providerId", element: <ProviderDetailPage /> },
+    { path: "providers", element: <ClientDiscoverPage /> },
     { path: "browse", element: <ClientServiceSearchPage /> },
     { path: "checkout/:providerId/confirmed", element: <BookingCheckoutConfirmedPage /> },
     { path: "checkout/:providerId", element: <BookingCheckoutPage /> },

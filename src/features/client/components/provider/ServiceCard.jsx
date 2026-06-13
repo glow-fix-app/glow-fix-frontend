@@ -14,7 +14,7 @@ export default function ServiceCard({ service, index, total, onBook, selectedSer
         <input
           type="checkbox"
           checked={isSelected || false}
-          onChange={() => {}} // Controlled by article onClick
+          onChange={() => onToggle?.(service)}
           onClick={(e) => e.stopPropagation()}
           className="h-4 w-4 rounded border-border-default text-brand-500 focus:ring-brand-500/20 cursor-pointer"
         />

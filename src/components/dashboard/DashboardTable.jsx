@@ -60,7 +60,7 @@ export function TableCellText({ children, muted = false, strong = false, classNa
   );
 }
 
-export function TableActionsMenu({ ariaLabel, items }) {
+export function TableActionsMenu({ ariaLabel, items, onAction }) {
   return (
     <Dropdown>
       <DropdownTrigger
@@ -73,12 +73,12 @@ export function TableActionsMenu({ ariaLabel, items }) {
         <EllipsisHorizontalIcon className="h-5 w-5" />
       </DropdownTrigger>
       <DropdownPopover placement="bottom end">
-        <DropdownMenu aria-label={ariaLabel}>
-          {items.map((item) => (
+        <DropdownMenu aria-label={ariaLabel} onAction={onAction} items={items}>
+          {(item) => (
             <DropdownItem key={item.key} variant={item.variant}>
               {item.label}
             </DropdownItem>
-          ))}
+          )}
         </DropdownMenu>
       </DropdownPopover>
     </Dropdown>
@@ -121,6 +121,7 @@ export default function DashboardTable({
   ariaLabel = "Data table",
   minWidth = "min-w-[48rem]",
   serverSide = false,
+  onRowAction,
 }) {
   const tableColumns = useMemo(
     () =>
@@ -181,7 +182,8 @@ export default function DashboardTable({
             aria-label={ariaLabel}
             sortDescriptor={sortDescriptor}
             onSortChange={onSortChange}
-            className={`w-full border-collapse ${minWidth} [&_td]:border-r-0 [&_th]:border-r-0`}
+            onRowAction={onRowAction}
+            className={`w-full border-collapse ${minWidth} [&_td]:border-r-0 [&_th]:border-r-0 ${onRowAction ? "cursor-pointer" : ""}`}
           >
             <Table.Header columns={tableColumns}>
               {(column) => (

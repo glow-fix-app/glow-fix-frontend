@@ -29,7 +29,7 @@ export const endpoints = {
   bookings: "/bookings",
   vehicles: "/vehicles",
   discover: "/businesses/discover",
-  diagnosticReports: "/diagnostic_reports",
+  diagnosticReports: "/diagnostic-reports",
   reportFindings: "/report_findings",
   recommendedRepairs: "/recommended_repairs",
   loyaltyConfig: "/loyalty_config",

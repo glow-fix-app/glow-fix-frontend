@@ -2,6 +2,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import CreateProviderServicePage from "@/features/provider/pages/CreateProviderServicePage";
 import EditProviderServicePage from "@/features/provider/pages/EditProviderServicePage";
 import ProviderBookingsPage from "@/features/provider/pages/ProviderBookingsPage";
+import ProviderBookingDetailPage from "@/features/provider/pages/ProviderBookingDetailPage";
 import ProviderCalendarPage from "@/features/provider/pages/ProviderCalendarPage";
 import ProviderChatPage from "@/features/provider/pages/ProviderChatPage";
 import ProviderDashboardPage from "@/features/provider/pages/ProviderDashboardPage";
@@ -20,6 +21,7 @@ export const providerRoutes = {
   children: [
     { index: true, element: <ProviderDashboardPage /> },
     { path: "bookings", element: <ProviderBookingsPage /> },
+    { path: "bookings/:id", element: <ProviderBookingDetailPage /> },
     { path: "calendar", element: <ProviderCalendarPage /> },
     { path: "services", element: <ProviderServicesPage /> },
     { path: "services/create", element: <CreateProviderServicePage /> },

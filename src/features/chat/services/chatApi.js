@@ -16,6 +16,12 @@ export const chatApi = {
     }).then((res) => res.data);
   },
   markRead: (conversationId) => api.patch(`${endpoints.chat}/conversations/${conversationId}/read`).then((res) => res.data),
+  /** Create-or-fetch a BOOKING conversation for a specific booking. */
+  bookingConversation: (bookingId) =>
+    api.post(`${endpoints.chat}/conversations`, { type: "BOOKING", bookingId }).then((res) => res.data),
+  /** Create-or-fetch a DIRECT conversation with a specific user. */
+  directConversation: (targetUserId) =>
+    api.post(`${endpoints.chat}/conversations`, { type: "GENERAL", targetUserId }).then((res) => res.data),
 };
 
 let globalChatSocket = null;

@@ -8,30 +8,63 @@ export const clientApi = {
   categories: () => api.get(endpoints.categories).then((res) => res.data),
 
   // Bookings
-  bookings: () => api.get(`${endpoints.client}/bookings?_expand=branch&_expand=vehicle`).then((res) => res.data),
+  bookings: ({ page = 1, limit = 20, status } = {}) => {
+    const params = new URLSearchParams({ page, limit });
+    if (status) params.set("status", status);
+    return api.get(`${endpoints.bookings}?${params.toString()}`).then((res) => res.data);
+  },
   bookingDetails: (id) =>
-    api
-      .get(`${endpoints.client}/bookings/${id}?_expand=branch&_expand=vehicle&_embed=booking_items&_embed=booking_photos&_embed=diagnostic_reports&_embed=payments`)
-      .then((res) => res.data),
-  cancelBooking: (id) => api.patch(`${endpoints.client}/bookings/${id}`, { status: "cancelled" }).then((res) => res.data),
+    api.get(`${endpoints.bookings}/${id}`).then((res) => res.data),
+  cancelBooking: (id, reason) =>
+    api.patch(`${endpoints.bookings}/${id}/cancel`, { reason: reason ?? "Cancelled by client" }).then((res) => res.data),
+  rescheduleBooking: (id, scheduledAt) =>
+    api.patch(`${endpoints.bookings}/${id}/reschedule`, { scheduledAt }).then((res) => res.data),
   reportDetails: async (reportId) => {
-    const [report, findings, repairs] = await Promise.all([
-      api.get(`${endpoints.diagnosticReports}/${reportId}`).then((r) => r.data),
-      api.get(`${endpoints.reportFindings}?diagnostic_report_id=${reportId}`).then((r) => r.data),
-      api.get(`${endpoints.recommendedRepairs}?diagnostic_report_id=${reportId}`).then((r) => r.data),
-    ]);
-    return {
-      ...report,
-      report_findings: findings,
-      recommended_repairs: repairs,
-    };
+    return api.get(`${endpoints.diagnosticReports}/${reportId}`).then((res) => res.data);
   },
   payBooking: (id) =>
     api.patch(`${endpoints.client}/bookings/${id}`, {
       status: "paid",
       paid_at: new Date().toISOString(),
     }).then((res) => res.data),
-  createBooking: (data) => api.post(`${endpoints.bookings}/create`, data).then((res) => res.data),
+  /**
+   * uploadBookingImages — uploads image Files to Cloudflare R2 via the backend.
+   * Returns an array of objects containing url and storageKey.
+   * @param {File[]} files - array of File objects from the photo picker
+   */
+  uploadBookingImages: async (files) => {
+    if (!files || files.length === 0) return [];
+    const formData = new FormData();
+    for (const file of files) {
+      formData.append("images", file);
+    }
+    const res = await api.post(`${endpoints.bookings}/upload-images`, formData, {
+      // Let browser set multipart boundary automatically
+    });
+    return res.data.images ?? [];
+  },
+
+  /**
+   * createBooking — transforms the checkout payload into the backend DTO.
+   * @param {object} data
+   * @param {string}   data.businessId       - the provider/business UUID
+   * @param {string}   data.vehicleId        - the client vehicle UUID
+   * @param {{businessServiceId: string}[]} data.items - service line items
+   * @param {string}   data.scheduledAt      - ISO-8601 datetime string
+   * @param {string}   [data.note]           - optional client note
+   * @param {string[]} [data.images]         - optional problem photo URLs
+   */
+  createBooking: (data) =>
+    api.post(`${endpoints.bookings}`, {
+      businessId: data.businessId,
+      vehicleId: data.vehicleId,
+      items: Array.isArray(data.items)
+        ? data.items
+        : (data.serviceIds ?? []).map((id) => ({ businessServiceId: id })),
+      scheduledAt: data.scheduledAt,
+      note: data.note ?? data.notes ?? undefined,
+      images: data.images ?? [],
+    }).then((res) => res.data),
 
   // Vehicles
   vehicles: () => api.get(endpoints.vehicles).then((res) => res.data),
@@ -41,14 +74,19 @@ export const clientApi = {
 
   // Payments & Billing
   billingSummary: () =>
-    api.get(`${endpoints.client}/billing/summary`).then((res) => res.data),
+    api.get(`/clients/me/stats`).then((res) => ({
+      spentThisMonth: res.data.total_spent,
+      bookings: res.data.total_bookings,
+      loyaltyPointsEarned: res.data.loyalty_points,
+      currency: "EGP", // Backend defaults to EGP
+    })),
   payments: ({ page = 1, limit = 5 } = {}) =>
-    api.get(`${endpoints.client}/payments?_expand=booking&_page=${page}&_limit=${limit}`)
+    api.get(`/payments?page=${page}&limit=${limit}`)
       .then((res) => ({
-        data: res.data,
-        totalCount: parseInt(res.headers["x-total-count"] || "0", 10),
+        data: res.data.data,
+        totalCount: res.data.meta?.total ?? 0,
       })),
-  paymentDetails: (id) => api.get(`${endpoints.client}/payments/${id}?_expand=booking`).then((res) => res.data),
+  paymentDetails: (id) => api.get(`/payments/${id}`).then((res) => res.data),
 
   // Profile & Settings (users module on backend)
   profile: () => api.get(endpoints.users.me).then((res) => res.data),
@@ -229,10 +267,98 @@ export const clientApi = {
       });
   },
 
-  providerDetails: (providerId, { userLocation = null } = {}) => {
+  providerDetails: async (providerId, { userLocation = null } = {}) => {
     const params = new URLSearchParams();
     if (userLocation?.lat != null) params.set("lat", userLocation.lat);
     if (userLocation?.lng != null) params.set("lng", userLocation.lng);
-    return api.get(`/businesses/${providerId}?${params.toString()}`).then((res) => res.data);
+
+    const [business, services, reviewsData] = await Promise.all([
+      api.get(`/businesses/${providerId}?${params.toString()}`).then((res) => res.data),
+      api.get(`${endpoints.services}/business/${providerId}`).then((res) => res.data).catch(() => []),
+      api.get(`/reviews/business/${providerId}`).then((res) => res.data).catch(() => null),
+    ]);
+
+    const categoriesMap = {};
+    for (const s of services) {
+      if (!categoriesMap[s.category_name]) {
+        categoriesMap[s.category_name] = { 
+          name: s.category_name, 
+          title: s.category_name, 
+          services: [] 
+        };
+      }
+      categoriesMap[s.category_name].services.push({
+        id: s.business_service_id,
+        name: s.title,
+        price: s.price,
+        priceLabel: s.price != null ? `EGP ${s.price}` : "Free",
+        duration: s.duration_minutes,
+        durationLabel: s.duration_minutes != null ? `~${s.duration_minutes} min` : null,
+        category: s.category_name,
+      });
+    }
+
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const formattedHours = (business.operating_hours || []).map((h) => ({
+      dayOfWeek: h.dayOfWeek,
+      dayName: dayNames[h.dayOfWeek] || `Day ${h.dayOfWeek}`,
+      isClosed: h.openTime == null || h.closeTime == null,
+      openTime: h.openTime ? h.openTime.slice(0, 5) : "",
+      closeTime: h.closeTime ? h.closeTime.slice(0, 5) : "",
+    }));
+
+    const categoryNames = Object.keys(categoriesMap);
+    let typeLabel = "Automotive Services";
+    if (categoryNames.includes("Wash") && (categoryNames.includes("Repair") || categoryNames.includes("Diagnostics"))) {
+      typeLabel = "Car Wash & Repair Shop";
+    } else if (categoryNames.includes("Wash")) {
+      typeLabel = "Car Wash & Detailing";
+    } else if (categoryNames.includes("Repair") || categoryNames.includes("Diagnostics")) {
+      typeLabel = "Auto Repair & Maintenance";
+    }
+
+    const about = {
+      address: business.address,
+      phone: business.contact_phone || business.contactPhone,
+      email: business.contact_email || business.contactEmail,
+      typeLabel,
+    };
+
+    const gallery = (business.gallery && business.gallery.length > 0)
+      ? business.gallery
+      : [
+          "https://images.unsplash.com/photo-1616788494707-ec28f08d05a1?auto=format&fit=crop&w=600&q=80",
+          "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=600&q=80",
+          "https://images.unsplash.com/photo-1507136566006-cfc505b114fc?auto=format&fit=crop&w=600&q=80",
+          "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=600&q=80",
+          "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=600&q=80",
+          "https://images.unsplash.com/photo-1517524206127-48bbd363f3d7?auto=format&fit=crop&w=600&q=80",
+        ];
+
+    const reviews = (reviewsData?.reviews ?? []).map((r) => ({
+      id: r.id,
+      rating: r.rating,
+      qualityRating: r.quality_rating,
+      punctualityRating: r.punctuality_rating,
+      communicationRating: r.communication_rating,
+      comment: r.comment,
+      createdAt: r.created_at || r.createdAt,
+      authorName: r.client_name || "Anonymous Client",
+      authorAvatar: null,
+    }));
+
+    return {
+      ...business,
+      lat: business.latitude,
+      lng: business.longitude,
+      businessName: business.business_name || business.businessName,
+      serviceCategories: Object.values(categoriesMap),
+      operatingHours: formattedHours,
+      about,
+      gallery,
+      reviews,
+      avgRating: reviewsData?.average_rating ?? business.average_rating ?? 0,
+      reviewCount: reviewsData?.total_reviews ?? business.total_reviews ?? 0,
+    };
   },
 };
