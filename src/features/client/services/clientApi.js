@@ -88,6 +88,14 @@ export const clientApi = {
       })),
   paymentDetails: (id) => api.get(`/payments/${id}`).then((res) => res.data),
 
+  // Reviews
+  checkReview: (bookingId) =>
+    api.get(`/reviews/check/${bookingId}`).then((res) => res.data),
+  createReview: (data) =>
+    api.post(`/reviews`, data).then((res) => res.data),
+  getBookingReview: (bookingId) =>
+    api.get(`/reviews/booking/${bookingId}`).then((res) => res.data),
+
   // Profile & Settings (users module on backend)
   profile: () => api.get(endpoints.users.me).then((res) => res.data),
   updateProfile: (data) =>
@@ -210,6 +218,7 @@ export const clientApi = {
                 id: offer.business_id,
                 businessName: offer.business_name,
                 address: offer.business_address,
+                logoUrl: offer.business_logo,
                 reviewCount: offer.total_reviews ?? 0,
                 avgRating: offer.average_rating ?? 0,
                 isOpen: offer.is_open ?? false,

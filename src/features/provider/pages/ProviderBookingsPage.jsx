@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Tabs, Label, SearchField } from "@heroui/react";
+import { Tabs, Label, SearchField, Select, ListBox, toast } from "@heroui/react";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 import DashboardTable, {
@@ -41,6 +41,19 @@ export default function ProviderBookingsPage() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortDescriptor, setSortDescriptor] = useState({ column: "dateTime", direction: "descending" });
+  const queryClient = useQueryClient();
+
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }) => providerApi.updateBookingStatus(id, { status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["provider", "bookings"] });
+      toast.success("Status updated successfully!");
+    },
+    onError: (err) => {
+      const msg = err.response?.data?.message;
+      toast.danger(Array.isArray(msg) ? msg.join(', ') : (msg || "Failed to update status"));
+    }
+  });
   
   // Debounce search
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -96,7 +109,7 @@ export default function ProviderBookingsPage() {
         return (
           <div className="flex min-w-[9rem] items-center gap-3">
             <UserAvatar
-              user={{ fullName: item.client_name }}
+              user={{ fullName: item.client_name, avatar_url: item.client_avatar }}
               className="h-8 w-8 shrink-0 text-xs font-medium"
               bg="bg-surface-hover text-text-secondary border border-border-default"
             />
@@ -135,7 +148,46 @@ export default function ProviderBookingsPage() {
       case "payment":
         return <StatusBadge status={item.payment ? item.payment.status : "PENDING"} />;
       case "status":
-        return <StatusBadge status={item.status} />;
+        const isPaid = item.payment?.status === "PAID";
+        return (
+          <Select 
+            className="w-[150px]" 
+            aria-label="Update status"
+            selectedKeys={[item.status]}
+            isDisabled={(updateStatusMutation.isPending && activeBookingId === item.id) || ["COMPLETED", "CANCELLED", "REJECTED"].includes(item.status)}
+            onSelectionChange={(keys) => {
+              // keys could be a string or a Set
+              const key = typeof keys === "string" ? keys : (keys?.currentKey || Array.from(keys)[0]);
+              if (key && key !== item.status) {
+                updateStatusMutation.mutate({ id: item.id, status: key });
+              }
+            }}
+          >
+            <Select.Trigger className="bg-white hover:bg-gray-50 p-1.5 min-h-0 h-auto rounded-xl flex items-center justify-between gap-2 border border-gray-200 w-full">
+              <Select.Value>
+                {(value) => <StatusBadge status={value?.textValue || item.status} />}
+              </Select.Value>
+              <svg className="w-4 h-4 text-gray-400 shrink-0 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </Select.Trigger>
+            <Select.Popover>
+              <ListBox>
+                <ListBox.Item id="VEHICLE_RECEIVED" textValue="VEHICLE_RECEIVED" description={!isPaid ? "Payment required" : undefined} isDisabled={!isPaid}>Vehicle Received</ListBox.Item>
+                <ListBox.Item id="IN_PROGRESS" textValue="IN_PROGRESS" description={!isPaid ? "Payment required" : undefined} isDisabled={!isPaid}>In Progress</ListBox.Item>
+                <ListBox.Item id="READY" textValue="READY" description={!isPaid ? "Payment required" : undefined} isDisabled={!isPaid}>Ready</ListBox.Item>
+                <ListBox.Item id="COMPLETED" textValue="COMPLETED" description={!isPaid ? "Payment required" : undefined} isDisabled={!isPaid}>Completed</ListBox.Item>
+                {!["COMPLETED", "CANCELLED", "READY", "READY_FOR_PICKUP", "REJECTED"].includes(item.status) && (
+                  item.status === "PENDING" ? (
+                    <ListBox.Item id="REJECTED" textValue="REJECTED" className="text-danger" color="danger">Reject</ListBox.Item>
+                  ) : (
+                    <ListBox.Item id="CANCELLED" textValue="CANCELLED" className="text-danger" color="danger">Cancelled</ListBox.Item>
+                  )
+                )}
+              </ListBox>
+            </Select.Popover>
+          </Select>
+        );
       case "actions":
         return (
           <TableActionsMenu

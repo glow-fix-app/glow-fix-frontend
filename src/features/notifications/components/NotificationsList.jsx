@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Button, ButtonGroup, Chip, Spinner } from "@heroui/react";
+import { useNavigate } from "react-router-dom";
 import {
   CalendarDaysIcon,
   ChatBubbleLeftIcon,
@@ -78,6 +79,7 @@ function getNotificationIcon(typeCode) {
 
 export default function NotificationsList() {
   const [filter, setFilter] = useState("all");
+  const navigate = useNavigate();
   
   // Socket is managed at the DashboardLayout level — no hook needed here
   const queryClient = useQueryClient();
@@ -124,6 +126,23 @@ export default function NotificationsList() {
 
   const handleDelete = (id) => {
     deleteMutation.mutate(id);
+  };
+
+  const handleNotificationClick = (notification) => {
+    if (!notification.readAt) {
+      handleMarkAsRead(notification.id);
+    }
+    if (notification.actionUrl) {
+      let url = notification.actionUrl;
+      if (url.startsWith('/client/')) {
+        url = url.replace('/client/', '/');
+      } else if (url.startsWith('/manager/')) {
+        url = url.replace('/manager/', '/provider/');
+      } else if (url.startsWith('/business/dashboard/')) {
+        url = url.replace('/business/dashboard/', '/provider/');
+      }
+      navigate(url);
+    }
   };
 
   return (
@@ -198,7 +217,10 @@ export default function NotificationsList() {
             return (
               <div
                 key={notification.id}
+                onClick={() => handleNotificationClick(notification)}
                 className={`flex items-start gap-4 rounded-xl border p-4 transition-colors ${
+                  notification.actionUrl ? "cursor-pointer hover:bg-gray-50" : ""
+                } ${
                   isUnread
                     ? "border-blue-100 bg-surface-page"
                     : "border-gray-100 bg-white"
@@ -230,7 +252,10 @@ export default function NotificationsList() {
                     <button
                       aria-label="Mark as read"
                       title="Mark as read"
-                      onClick={() => handleMarkAsRead(notification.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMarkAsRead(notification.id);
+                      }}
                       disabled={markReadMutation.isPending}
                       className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
                     >
@@ -240,7 +265,10 @@ export default function NotificationsList() {
                   <button
                     aria-label="Delete notification"
                     title="Delete notification"
-                    onClick={() => handleDelete(notification.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(notification.id);
+                    }}
                     disabled={deleteMutation.isPending}
                     className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-red-100 hover:text-red-600 transition-colors"
                   >

@@ -33,6 +33,7 @@ function normalizeProvider(p) {
     id: p.id,
     businessName: p.business_name,
     address: p.address,
+    logoUrl: p.logo_url,
     contactPhone: p.contact_phone,
     contactEmail: p.contact_email,
     distanceKm: p.distance_km,

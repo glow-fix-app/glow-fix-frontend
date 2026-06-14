@@ -20,6 +20,7 @@ export default function BookingCard({
   isCancelling,
 }) {
   const isUpcoming =
+    booking.status === BOOKING_STATUS.ACCEPTED ||
     booking.status === BOOKING_STATUS.CONFIRMED ||
     booking.status === BOOKING_STATUS.IN_PROGRESS ||
     booking.status === BOOKING_STATUS.DIAGNOSTIC_READY;
@@ -39,7 +40,7 @@ export default function BookingCard({
     if (s === "confirmed" || s === "paid" || s === "completed") {
       return { text: "text-brand-500", bg: "bg-brand-500" };
     }
-    if (s === "pending") {
+    if (s === "pending" || s === "accepted") {
       return { text: "text-warning", bg: "bg-warning" };
     }
     return { text: "text-text-muted", bg: "bg-text-muted" };
@@ -103,8 +104,8 @@ export default function BookingCard({
           <span className="text-[12px] font-normal">↗</span>
         </Button>
 
-        {/* Cancel button if confirmed and upcoming */}
-        {isUpcoming && onCancel && booking.status === BOOKING_STATUS.CONFIRMED && (
+        {/* Cancel button if confirmed, accepted, or pending and upcoming */}
+        {isUpcoming && onCancel && (booking.status === BOOKING_STATUS.CONFIRMED || booking.status === BOOKING_STATUS.ACCEPTED) && (
           <Button
             size="sm"
             className="h-9 rounded-full bg-white border border-gray-200 text-text-tertiary px-5 text-[13px] font-semibold hover:bg-gray-50 transition-colors"

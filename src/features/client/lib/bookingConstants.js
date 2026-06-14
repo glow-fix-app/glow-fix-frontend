@@ -1,5 +1,6 @@
 export const BOOKING_STATUS = {
   PENDING: "pending",
+  ACCEPTED: "accepted",
   CONFIRMED: "confirmed",
   PAID: "paid",
   VEHICLE_RECEIVED: "vehicle_received",
@@ -12,8 +13,8 @@ export const BOOKING_STATUS = {
 
 export const BOOKING_STEPS = [
   { key: "pending", label: "Pending" },
+  { key: "accepted", label: "Accepted" },
   { key: "confirmed", label: "Confirmed" },
-  { key: "paid", label: "Paid" },
   { key: "vehicle_received", label: "Vehicle Received" },
   { key: "in_progress", label: "In Progress" },
   { key: "ready", label: "Ready" },

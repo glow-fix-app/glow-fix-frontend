@@ -26,7 +26,11 @@ export default function BookingDetailsCard({ view }) {
               <span className="font-normal text-text-primary">{view.address}</span>
               <span className="text-text-muted">·</span>
               <Link
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(view.address)}`}
+                href={
+                  view.lat && view.lng
+                    ? `https://www.google.com/maps/dir/?api=1&destination=${view.lat},${view.lng}`
+                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(view.address)}`
+                }
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-0.5 text-[12px] font-bold text-brand-500 hover:underline"
@@ -77,13 +81,34 @@ export default function BookingDetailsCard({ view }) {
         </div>
       </Card.Content>
 
-      {view.notes && (
+      {(view.notes || (view.problemImages && view.problemImages.length > 0)) && (
         <Card.Footer className="px-6 pb-6 pt-0">
           <div className="w-full rounded-xl bg-surface-hover px-4 py-3 border border-gray-100">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-text-muted mb-1">
-              Notes from you
+            <p className="text-[11px] font-bold uppercase tracking-wider text-text-muted mb-2">
+              Notes & Photos from you
             </p>
-            <p className="text-[14px] text-text-tertiary leading-relaxed font-medium">{view.notes}</p>
+            {view.notes && (
+              <p className="text-[14px] text-text-tertiary leading-relaxed font-medium mb-3">{view.notes}</p>
+            )}
+            {view.problemImages && view.problemImages.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {view.problemImages.map((imgUrl, i) => (
+                  <a
+                    key={i}
+                    href={imgUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-16 w-16 overflow-hidden rounded-lg border border-gray-200 block"
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={`Problem ${i + 1}`}
+                      className="h-full w-full object-cover hover:opacity-80 transition-opacity"
+                    />
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
         </Card.Footer>
       )}

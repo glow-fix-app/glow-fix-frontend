@@ -37,16 +37,19 @@ export default function ForceLocationModal() {
     try {
       setIsSubmitting(true);
       setError(null);
-      await clientApi.updateLocation({
+      const result = await clientApi.updateLocation({
         latitude: location.lat,
         longitude: location.lng,
       });
+
+      const city = result?.location?.city ?? null;
 
       dispatch(setCurrentUser({
         ...user,
         clientLocation: {
           latitude: location.lat,
           longitude: location.lng,
+          city,
         },
       }));
     } catch (err) {

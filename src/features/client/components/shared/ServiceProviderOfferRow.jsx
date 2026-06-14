@@ -8,7 +8,7 @@ import { formatProviderLocationLine } from "@/features/client/lib/providerDispla
 /**
  * Marketplace row: provider + one service offer (used on service search; layout aligned with provider ServiceCard pricing).
  */
-const PROVIDER_DETAIL_PATH = (id) => `/services/${id}`;
+const PROVIDER_DETAIL_PATH = (id) => `/providers/${id}`;
 
 export default function ServiceProviderOfferRow({ offer, className = "" }) {
   const { provider = {}, service, offerLine } = offer || {};
@@ -18,7 +18,7 @@ export default function ServiceProviderOfferRow({ offer, className = "" }) {
     <article
       className={`grid grid-cols-1 gap-4 border-b border-gray-200 px-5 py-5 last:border-b-0 sm:grid-cols-[72px_1fr_auto] sm:items-center sm:gap-5 sm:px-6 ${className}`}
     >
-      <ProviderOfferAvatar name={provider.businessName} />
+      <ProviderOfferAvatar name={provider.businessName} avatarUrl={provider.logoUrl} />
 
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">

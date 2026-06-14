@@ -4,14 +4,6 @@ import { Link } from "react-router-dom";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ROUTE_PATHS } from "@/routes/paths";
 
-function getServiceLabel(serviceType) {
-  if (!serviceType) return "—";
-  const t = serviceType.toLowerCase();
-  if (t === "wash") return "Car Wash";
-  if (t === "repair") return "Repair";
-  if (t === "both") return "Wash & Repair";
-  return serviceType;
-}
 
 export default function ProviderCard({ provider, isSelected, onSelect }) {
   const distanceKm = provider.distanceKm;
@@ -27,8 +19,8 @@ export default function ProviderCard({ provider, isSelected, onSelect }) {
       ? `Open · ${provider.operatingHoursToday}`
       : "Open now"
     : provider.operatingHoursToday
-    ? `Closed · ${provider.operatingHoursToday}`
-    : "Closed";
+      ? `Closed · ${provider.operatingHoursToday}`
+      : "Closed";
 
   return (
     <Link
@@ -38,15 +30,14 @@ export default function ProviderCard({ provider, isSelected, onSelect }) {
     >
       <Card
         id={`provider-card-${provider.id}`}
-        className={`shrink-0 cursor-pointer border-none px-4 py-3.5 shadow-none rounded-xl transition-all ${
-          isSelected
+        className={`shrink-0 cursor-pointer border-none px-4 py-3.5 shadow-none rounded-xl transition-all ${isSelected
             ? "ring-2 ring-brand-500 bg-brand-500/5 shadow-sm"
             : "bg-white ring-1 ring-border-default hover:ring-gray-300 hover:shadow-sm"
-        }`}
+          }`}
       >
         <div className="flex items-center gap-3">
           <UserAvatar
-            user={{ name: provider.businessName }}
+            user={{ name: provider.businessName, avatar_url: provider.logoUrl }}
             className="h-11 w-11 rounded-xl text-[13px] font-semibold shrink-0"
             style={{ backgroundColor: provider.avatarBg, color: provider.avatarText }}
           />

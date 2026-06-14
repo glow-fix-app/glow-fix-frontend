@@ -73,7 +73,8 @@ export default function ProviderBookingDetailPage() {
       setIsDeclineOpen(false);
     },
     onError: (err) => {
-      toast.danger(err.response?.data?.message || "Failed to review booking");
+      const msg = err.response?.data?.message;
+      toast.danger(Array.isArray(msg) ? msg.join(', ') : (msg || "Failed to review booking"));
     }
   });
 
@@ -85,7 +86,8 @@ export default function ProviderBookingDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["provider", "bookings", id] });
     },
     onError: (err) => {
-      toast.danger(err.response?.data?.message || "Failed to update status");
+      const msg = err.response?.data?.message;
+      toast.danger(Array.isArray(msg) ? msg.join(', ') : (msg || "Failed to update status"));
     }
   });
 
@@ -197,7 +199,13 @@ export default function ProviderBookingDetailPage() {
       <BookingHeader 
         id={booking.id}
         status={currentStatus}
+        paymentStatus={payment?.status?.context || "PENDING"}
         navigate={navigate}
+        onUpdateStatus={(newStatus) => {
+          if (newStatus !== currentStatus) {
+            statusMutation.mutate({ status: newStatus });
+          }
+        }}
       />
 
       {/* Unified 5-Column Split Layout */}
