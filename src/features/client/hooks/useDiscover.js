@@ -73,7 +73,7 @@ export function useDiscover({
   city = null,
   enabled = true,
 } = {}) {
-  const { maxDistance, minRating, openNow, search } = filters;
+  const { maxDistance, minRating, openNow, search, categories } = filters;
 
   const { data, isLoading, error } = useQuery({
     queryKey: [
@@ -86,6 +86,7 @@ export function useDiscover({
       openNow,
       search,
       sort,
+      categories,
     ],
     queryFn: ({ signal }) =>
       clientApi.discover({
@@ -96,6 +97,7 @@ export function useDiscover({
         openNow,
         search,
         sort,
+        categories,
         signal,
       }),
     enabled,
@@ -105,7 +107,7 @@ export function useDiscover({
 
   const allProviders = useMemo(() => enrichWithAvatar(data), [data]);
 
-  // The user requested NO frontend filtration for categories
+  // Backend now handles category filtering
   const providers = allProviders;
 
   const meta = data?.meta ?? null;

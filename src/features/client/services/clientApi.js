@@ -133,6 +133,7 @@ export const clientApi = {
     userLocation = null,
     city = null,
     serviceType = "all",
+    categories = [],
     maxDistance,
     minRating = 0,
     openNow = false,
@@ -145,6 +146,9 @@ export const clientApi = {
     if (userLocation?.lat != null) params.set("latitude", userLocation.lat);
     if (userLocation?.lng != null) params.set("longitude", userLocation.lng);
     if (serviceType !== "all") params.set("filters[service]", serviceType);
+    if (categories && categories.length > 0) {
+      categories.forEach(c => params.append("filters[categories][]", c));
+    }
     if (maxDistance != null) params.set("filters[max_distance]", maxDistance);
     if (minRating > 0) params.set("filters[min_rating]", minRating);
     if (openNow) params.set("filters[open_now]", "true");
@@ -321,6 +325,7 @@ export const clientApi = {
       address: business.address,
       phone: business.contact_phone || business.contactPhone,
       email: business.contact_email || business.contactEmail,
+      description: business.description,
       typeLabel,
     };
 
@@ -342,6 +347,8 @@ export const clientApi = {
       punctualityRating: r.punctuality_rating,
       communicationRating: r.communication_rating,
       comment: r.comment,
+      reply: r.reply,
+      repliedAt: r.replied_at,
       createdAt: r.created_at || r.createdAt,
       authorName: r.client_name || "Anonymous Client",
       authorAvatar: null,
@@ -352,6 +359,8 @@ export const clientApi = {
       lat: business.latitude,
       lng: business.longitude,
       businessName: business.business_name || business.businessName,
+      coverUrl: business.cover_url || business.coverUrl,
+      logoUrl: business.logo_url || business.logoUrl,
       serviceCategories: Object.values(categoriesMap),
       operatingHours: formattedHours,
       about,

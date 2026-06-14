@@ -28,4 +28,30 @@ export const providerApi = {
   updateAssignedService: (businessId, businessServiceId, data) => api.put(`/services/business/${businessId}/assigned/${businessServiceId}`, data).then(res => res.data),
   toggleAssignedService: (businessId, businessServiceId) => api.patch(`/services/business/${businessId}/assigned/${businessServiceId}/toggle`).then(res => res.data),
   deleteAssignedService: (businessId, businessServiceId) => api.delete(`/services/business/${businessId}/assigned/${businessServiceId}`).then(res => res.data),
+
+  // Reviews Management
+  getBusinessReviews: (businessId, params) => api.get(`/reviews/business/${businessId}`, { params }).then(res => res.data),
+  getBusinessRatingSummary: (businessId) => api.get(`/reviews/business/${businessId}/summary`).then(res => res.data),
+  replyToReview: (reviewId, reply) => api.post(`/reviews/${reviewId}/reply`, { reply }).then(res => res.data),
+
+  // Profile Management
+  createBusiness: (data) => api.post('/businesses', data).then((res) => res.data),
+  updateBusiness: (data) => api.put('/businesses/me', data).then((res) => res.data),
+  uploadLogo: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.put('/businesses/me/logo', formData).then((res) => res.data);
+  },
+  uploadCover: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.put('/businesses/me/cover', formData).then((res) => res.data);
+  },
+  uploadGalleryImage: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/businesses/me/gallery', formData).then((res) => res.data);
+  },
+  deleteGalleryImage: (url) => api.delete('/businesses/me/gallery', { data: { url } }).then((res) => res.data),
+  reorderGallery: (urls) => api.put('/businesses/me/gallery/reorder', { urls }).then((res) => res.data),
 };

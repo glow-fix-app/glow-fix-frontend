@@ -29,6 +29,15 @@ export default function ProviderAboutTab({ about, operatingHours = [], gallery =
 
       <ProviderGallery gallery={gallery} />
 
+      {about?.description && (
+        <Card className="border-none p-5 shadow-none ring-1 ring-black/[0.06] lg:col-span-2">
+          <h3 className="text-[15px] font-bold text-text-primary">About</h3>
+          <p className="mt-3 whitespace-pre-wrap text-[14px] leading-relaxed text-text-secondary">
+            {about.description}
+          </p>
+        </Card>
+      )}
+
       <Card className="border-none p-5 shadow-none ring-1 ring-black/[0.06]">
         <h3 className="text-[15px] font-bold text-text-primary">Contact & location</h3>
         <div className="mt-2 divide-y divide-gray-100">

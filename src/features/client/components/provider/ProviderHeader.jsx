@@ -16,7 +16,7 @@ export default function ProviderHeader({ provider, onDirections }) {
           <UserAvatar
             user={{
               name: provider.businessName,
-              avatar: provider.logoUrl,
+              avatar_url: provider.logoUrl,
             }}
             radius="none"
             bg="bg-white text-text-primary"
