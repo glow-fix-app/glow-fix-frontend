@@ -168,7 +168,7 @@ export default function VerificationDocumentsTab() {
                     <Label className="block px-1 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary mb-1">Document Type</Label>
                     <Select.Trigger className="h-12 w-full rounded-xl border border-gray-300 px-5 text-[14px] font-normal transition-all outline-none bg-white text-text-primary focus:border-brand-500 flex items-center justify-between cursor-pointer">
                       <Select.Value />
-                      <Select.Indicator />
+                      <Select.Indicator>▼</Select.Indicator>
                     </Select.Trigger>
                     <Select.Popover className="bg-white border border-gray-200 rounded-xl shadow-xl p-1 z-[9999]">
                       <ListBox>
