@@ -33,7 +33,7 @@ export default function ChatSidebar({ chats, selectedId, onSelect, isLoading }) 
               }`}
             >
               <UserAvatar
-                user={{ name: chat.name }}
+                user={{ name: chat.name, avatar_url: chat.avatar_url }}
                 className="w-12 h-12 text-[13px] font-semibold shrink-0 rounded-xl"
               />
               <div className="flex-1 min-w-0">

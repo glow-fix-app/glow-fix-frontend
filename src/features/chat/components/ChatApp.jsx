@@ -58,6 +58,7 @@ export default function ChatApp() {
   const formattedChats = (conversationsData || []).map((conv) => {
     const otherParticipant = conv.participants?.find((p) => p.userId !== currentUser?.id);
     const name = otherParticipant?.user?.fullName || "Unknown User";
+    const avatar_url = otherParticipant?.user?.avatar_url;
 
     const lastMsg = conv.lastMessage;
     let lastMessagePreview = "No messages yet";
@@ -80,6 +81,7 @@ export default function ChatApp() {
     return {
       id: conv.id,
       name,
+      avatar_url,
       lastMessage: lastMessagePreview,
       time: formatTime(conv.updatedAt),
       unread: hasUnread ? 1 : 0,

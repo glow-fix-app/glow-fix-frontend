@@ -157,7 +157,7 @@ export default function ChatWindow({
           </button>
         )}
         <UserAvatar
-          user={{ name: selectedChatInfo?.name }}
+          user={{ name: selectedChatInfo?.name, avatar_url: selectedChatInfo?.avatar_url }}
           className="w-10 h-10 text-[13px] font-semibold shrink-0 rounded-full ring-2 ring-gray-50"
         />
         <div className="flex flex-col">
