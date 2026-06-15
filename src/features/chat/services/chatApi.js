@@ -34,7 +34,10 @@ export function getGlobalChatSocket() {
     const token = store.getState().auth.accessToken;
     if (!token) return null;
     
-    const baseUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
+    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+    const defaultSocketUrl = apiUrl.startsWith('http') ? new URL(apiUrl).origin : window.location.origin;
+    const baseUrl = import.meta.env.VITE_SOCKET_URL || defaultSocketUrl;
+
     globalChatSocket = io(`${baseUrl}/chat`, {
       autoConnect: false,
       transports: ["websocket"],

@@ -49,11 +49,10 @@ export const UserAvatar = ({
     <Avatar
       key={getAvatarKey(user)}
       radius={radius}
+      src={avatarSrc || undefined}
+      name={getInitials(user)}
       className={`${className} ${bg} ${shadow} ${ring} border border-gray-200 shrink-0`}
       {...props}
-    >
-      {avatarSrc ? <Avatar.Image src={avatarSrc} alt="" /> : null}
-      <Avatar.Fallback className="font-medium text-text-secondary">{getInitials(user)}</Avatar.Fallback>
-    </Avatar>
+    />
   );
 };
