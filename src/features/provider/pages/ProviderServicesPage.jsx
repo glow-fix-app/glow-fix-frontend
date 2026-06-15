@@ -306,9 +306,9 @@ export default function ProviderServicesPage() {
                     <Select 
                       className="w-full" 
                       placeholder="Choose a service..."
-                      selectedKeys={chosenServiceId ? [chosenServiceId] : []}
-                      onSelectionChange={(keys) => {
-                        let selected = Array.from(keys)[0];
+                      selectedKey={chosenServiceId || ""}
+                      onSelectionChange={(key) => {
+                        let selected = key;
                         if (typeof selected === 'string') {
                           selected = selected.replace(/^\$\.?|^\.\$/g, '');
                         }
