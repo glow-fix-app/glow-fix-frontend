@@ -21,7 +21,7 @@ export function useUnreadMessages() {
     queryKey: queryKeys.chat,
     queryFn: chatApi.conversations,
     enabled: !!isAuthenticated,
-    refetchInterval: 30_000,
+    refetchInterval: 3000,
     staleTime: 10_000,
   });
 

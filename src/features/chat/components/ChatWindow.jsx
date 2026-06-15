@@ -38,6 +38,7 @@ export default function ChatWindow({
     queryKey: [...queryKeys.chat, "messages", selectedChatId],
     queryFn: () => chatApi.messages(selectedChatId),
     enabled: !!selectedChatId,
+    refetchInterval: 3000,
   });
 
   const sendMessageMutation = useMutation({
@@ -91,11 +92,13 @@ export default function ChatWindow({
   }, [messagesData?.data, typingUsers]);
 
   useEffect(() => {
-    if (messagesData?.data && socket?.connected) {
+    if (messagesData?.data) {
       let hasUnread = false;
       messagesData.data.forEach(msg => {
         if (msg.senderUserId !== currentUser?.id && !msg.readAt) {
-          socket.emit("message.read", { messageId: msg.id });
+          if (socket?.connected) {
+            socket.emit("message.read", { messageId: msg.id });
+          }
           hasUnread = true;
         }
       });

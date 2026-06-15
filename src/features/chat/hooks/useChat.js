@@ -16,6 +16,7 @@ export function useChat() {
   const conversations = useQuery({
     queryKey: queryKeys.chat,
     queryFn: chatApi.conversations,
+    refetchInterval: 3000,
   });
 
   useEffect(() => {
