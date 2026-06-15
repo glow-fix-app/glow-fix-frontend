@@ -50,9 +50,17 @@ export function useChat() {
         [...queryKeys.chat, "messages", message.conversationId],
         (oldData) => {
           if (!oldData) return oldData;
+          // Prevent duplicates
+          if (oldData.data.some(m => m.id === message.id)) return oldData;
+          
+          // Remove optimistic message if this is the real one coming back
+          const newData = oldData.data.filter(m => 
+            !(m.id.toString().startsWith('temp-') && m.body === message.body)
+          );
+          
           return {
             ...oldData,
-            data: [...oldData.data, message],
+            data: [...newData, message],
           };
         }
       );
