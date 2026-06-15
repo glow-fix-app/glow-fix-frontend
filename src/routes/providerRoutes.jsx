@@ -13,7 +13,11 @@ import ProviderNotificationsPage from "@/features/provider/pages/ProviderNotific
 import ProviderProfilePage from "@/features/provider/pages/ProviderProfilePage";
 import ProviderReviewsPage from "@/features/provider/pages/ProviderReviewsPage";
 import ProviderServicesPage from "@/features/provider/pages/ProviderServicesPage";
-import ProviderSettingsPage from "@/features/provider/pages/ProviderSettingsPage";
+import ProviderSettingsLayout from "@/features/provider/pages/ProviderSettingsLayout";
+import AccountInfoTab from "@/features/provider/components/settings/AccountInfoTab";
+import PasswordSecurityTab from "@/features/provider/components/settings/PasswordSecurityTab";
+import BankDetailsTab from "@/features/provider/components/settings/BankDetailsTab";
+import VerificationDocumentsTab from "@/features/provider/components/settings/VerificationDocumentsTab";
 
 export const providerRoutes = {
   path: "/provider",
@@ -32,7 +36,16 @@ export const providerRoutes = {
     { path: "payouts", element: <ProviderPayoutsPage /> },
     { path: "profile", element: <ProviderProfilePage /> },
     { path: "notifications", element: <ProviderNotificationsPage /> },
-    { path: "settings", element: <ProviderSettingsPage /> },
+    { 
+      path: "settings", 
+      element: <ProviderSettingsLayout />,
+      children: [
+        { path: "account", element: <AccountInfoTab /> },
+        { path: "security", element: <PasswordSecurityTab /> },
+        { path: "billing", element: <BankDetailsTab /> },
+        { path: "documents", element: <VerificationDocumentsTab /> },
+      ]
+    },
     { path: "help", element: <ProviderHelpPage /> },
   ],
 };

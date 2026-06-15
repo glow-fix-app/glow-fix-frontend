@@ -55,7 +55,7 @@ function buildCheckout(booking, routerState, { balance, activeConfig }, applyLoy
     egpPerPoint,
     total: Math.max(0, subtotal - loyaltyDiscount),
     serviceTitle: items[0]?.title ?? null,
-    providerName: booking?.branch?.business_name ?? null,
+    providerName: booking?.business?.businessName ?? null,
     scheduledLabel: booking?.scheduled_at ?? null,
     estimatedRepairTime: routerState?.estimatedRepairTime ?? null,
   };
@@ -95,21 +95,14 @@ export function useBookingPayment(bookingId) {
         throw new Error("Booking not found.");
       }
 
-      const redeem =
-        useLoyaltyPoints && checkout.maxPointsAllowed > 0
-          ? clientApi.redeemLoyaltyPoints({
-              booking_id: booking.id,
-              transaction_type: "REDEEM",
-              points: checkout.maxPointsAllowed,
-              description: "Redeemed for service discount",
-              created_at: new Date().toISOString(),
-            })
-          : null;
-
-      await Promise.all([
-        clientApi.payBooking(booking.id),
-        ...(redeem ? [redeem] : []),
-      ]);
+      const isRedeeming = useLoyaltyPoints && checkout.maxPointsAllowed > 0;
+      
+      await clientApi.payBooking({
+        booking_id: booking.id,
+        payment_method: "CARD",
+        redeem_points: isRedeeming,
+        points_to_redeem: isRedeeming ? checkout.maxPointsAllowed : undefined,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.bookings });

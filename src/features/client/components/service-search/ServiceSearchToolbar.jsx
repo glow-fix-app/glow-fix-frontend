@@ -27,7 +27,7 @@ export default function ServiceSearchToolbar({
         fullWidth
         className="min-w-0 flex-1"
       >
-        <SearchField.Group className="flex w-full items-center h-12 rounded-full border border-border-default bg-white shadow-sm px-3 gap-2 data-[focus-within=true]:border-brand-500 data-[focus-within=true]:ring-2 data-[focus-within=true]:ring-brand-500/20">
+        <SearchField.Group className="flex w-full items-center h-12 rounded-xl border border-border-default bg-white shadow-none px-3 gap-2 data-[focus-within=true]:border-brand-500 data-[focus-within=true]:ring-2 data-[focus-within=true]:ring-brand-500/20">
           <SearchField.SearchIcon className="text-text-muted shrink-0" />
           <SearchField.Input
             placeholder="Try 'AC repair', 'ceramic wax', 'brake'..."

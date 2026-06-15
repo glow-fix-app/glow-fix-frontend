@@ -28,20 +28,6 @@ export default function ClientServiceSearchPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl pb-16">
-      <div className="mb-8">
-        <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-text-muted">
-          <BoltIcon className="h-4 w-4 text-brand-500" aria-hidden />
-          Service search
-        </p>
-        <h1 className="mt-2 text-[28px] font-bold leading-tight text-text-primary sm:text-[32px]">
-          Find a service. Compare prices.
-        </h1>
-        <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-text-tertiary">
-          Search any car service and see every provider that offers it — with live pricing near your
-          location.
-        </p>
-      </div>
-
       <div className="space-y-4">
         <ServiceSearchToolbar
           locations={locations}

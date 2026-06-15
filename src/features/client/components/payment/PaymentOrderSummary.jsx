@@ -41,7 +41,7 @@ export default function PaymentOrderSummary({
         <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-text-muted mb-2">
           Provider
         </p>
-        <h3 className="text-[18px] font-bold text-text-primary leading-tight">
+        <h3 className="text-[15px] font-black text-text-primary leading-tight">
           {providerName ?? "—"}
         </h3>
         {subtitle && <p className="text-[13px] text-text-tertiary mt-1">{subtitle}</p>}

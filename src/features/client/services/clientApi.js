@@ -22,10 +22,12 @@ export const clientApi = {
   reportDetails: async (reportId) => {
     return api.get(`${endpoints.diagnosticReports}/${reportId}`).then((res) => res.data);
   },
-  payBooking: (id) =>
-    api.patch(`${endpoints.client}/bookings/${id}`, {
-      status: "paid",
-      paid_at: new Date().toISOString(),
+  payBooking: (data) =>
+    api.post(endpoints.payments, {
+      booking_id: data.booking_id,
+      payment_method: data.payment_method || "CARD",
+      redeem_points: data.redeem_points,
+      points_to_redeem: data.points_to_redeem,
     }).then((res) => res.data),
   /**
    * uploadBookingImages — uploads image Files to Cloudflare R2 via the backend.
@@ -287,7 +289,7 @@ export const clientApi = {
     if (userLocation?.lng != null) params.set("lng", userLocation.lng);
 
     const [business, services, reviewsData] = await Promise.all([
-      api.get(`/businesses/${providerId}?${params.toString()}`).then((res) => res.data),
+      api.get(`/businesses/details/${providerId}?${params.toString()}`).then((res) => res.data),
       api.get(`${endpoints.services}/business/${providerId}`).then((res) => res.data).catch(() => []),
       api.get(`/reviews/business/${providerId}`).then((res) => res.data).catch(() => null),
     ]);

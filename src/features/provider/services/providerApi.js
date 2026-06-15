@@ -11,11 +11,19 @@ export const providerApi = {
   // Real backend endpoints for dashboard
   myBusiness: () => api.get('/businesses/me').then((res) => res.data),
   stats: () => api.get('/businesses/me/stats').then((res) => res.data),
+  
+  // Analytics Module Endpoints
+  analyticsDashboard: (params) => api.get('/analytics/dashboard', { params }).then(res => res.data),
+  analyticsRevenue: (params) => api.get('/analytics/revenue', { params }).then(res => res.data),
+  analyticsBookings: (params) => api.get('/analytics/bookings', { params }).then(res => res.data),
+  analyticsTopServices: (params) => api.get('/analytics/bookings/top-services', { params }).then(res => res.data),
   managerBookings: (params) => api.get('/manager/bookings', { params }).then((res) => res.data),
   managerBookingDetails: (id) => api.get(`/manager/bookings/${id}`).then((res) => res.data),
   reviewBooking: (id, data) => api.patch(`/manager/bookings/${id}/review`, data).then((res) => res.data),
   updateBookingStatus: (id, data) => api.patch(`/manager/bookings/${id}/status`, data).then((res) => res.data),
   businessReviews: (businessId, params) => api.get(`/reviews/business/${businessId}`, { params }).then((res) => res.data),
+  // Payouts & Earnings
+  getPayouts: (businessId, params) => api.get(`/payments/business/${businessId}/payouts`, { params }).then(res => res.data),
   
   // Diagnostic Reports & Services
   getAssignedServices: (businessId) => api.get(`/services/business/${businessId}/assigned`).then(res => res.data),
@@ -35,6 +43,14 @@ export const providerApi = {
   replyToReview: (reviewId, reply) => api.post(`/reviews/${reviewId}/reply`, { reply }).then(res => res.data),
 
   // Profile Management
+  updateProfile: (data) => api.put('/users/me', data).then((res) => res.data),
+  uploadAvatar: (file) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    return api.put('/users/me/avatar', formData).then((res) => res.data);
+  },
+  deleteAvatar: () => api.delete('/users/me/avatar').then((res) => res.data),
+
   createBusiness: (data) => api.post('/businesses', data).then((res) => res.data),
   updateBusiness: (data) => api.put('/businesses/me', data).then((res) => res.data),
   uploadLogo: (file) => {
@@ -54,4 +70,14 @@ export const providerApi = {
   },
   deleteGalleryImage: (url) => api.delete('/businesses/me/gallery', { data: { url } }).then((res) => res.data),
   reorderGallery: (urls) => api.put('/businesses/me/gallery/reorder', { urls }).then((res) => res.data),
+
+  // Document Management
+  getDocuments: () => api.get('/businesses/me/documents').then((res) => res.data),
+  uploadDocument: (file, type) => {
+    const formData = new FormData();
+    formData.append('type', type);
+    formData.append('file', file);
+    return api.post('/businesses/me/documents', formData).then((res) => res.data);
+  },
+  deleteDocument: (documentId) => api.delete(`/businesses/me/documents/${documentId}`).then((res) => res.data),
 };

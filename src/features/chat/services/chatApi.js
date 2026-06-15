@@ -22,6 +22,9 @@ export const chatApi = {
   /** Create-or-fetch a DIRECT conversation with a specific user. */
   directConversation: (targetUserId) =>
     api.post(`${endpoints.chat}/conversations`, { type: "GENERAL", targetUserId }).then((res) => res.data),
+  /** Create-or-fetch a SUPPORT conversation with an admin. */
+  supportConversation: () =>
+    api.post(`${endpoints.chat}/conversations`, { type: "SUPPORT" }).then((res) => res.data),
 };
 
 let globalChatSocket = null;

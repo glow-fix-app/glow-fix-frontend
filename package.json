@@ -13,6 +13,7 @@
     "@heroicons/react": "^2.2.0",
     "@heroui/react": "latest",
     "@hookform/resolvers": "latest",
+    "@internationalized/date": "^3.12.2",
     "@reduxjs/toolkit": "latest",
     "@tanstack/react-query": "latest",
     "axios": "latest",
@@ -23,6 +24,7 @@
     "react-leaflet": "^5.0.0",
     "react-redux": "latest",
     "react-router-dom": "latest",
+    "recharts": "^3.8.1",
     "socket.io-client": "^4.8.3",
     "zod": "latest"
   },

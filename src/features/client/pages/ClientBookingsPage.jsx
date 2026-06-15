@@ -4,12 +4,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import BookingCard from "@/features/client/components/bookings/BookingCard";
 import EmptyState from "@/components/feedback/EmptyState";
 import { Spinner, Tabs, toast } from "@heroui/react";
-import PageHeader from "@/components/ui/PageHeader";
 import { useBookings } from "@/features/client/hooks/useBookings";
 import { clientApi } from "@/features/client/services/clientApi";
 import { ROUTE_PATHS } from "@/routes/paths";
 import { queryKeys } from "@/services/queryClient";
-
 export default function ClientBookingsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -47,12 +45,6 @@ export default function ClientBookingsPage() {
 
   return (
     <section className="mx-auto w-full max-w-7xl pb-16">
-      <PageHeader
-        pretitle="Bookings"
-        title="Your Appointments"
-        description="Manage your upcoming, past, and cancelled service appointments."
-      />
-
       <div className="mt-6 mb-4">
         <Tabs
           className="w-full max-w-sm"

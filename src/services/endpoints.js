@@ -34,4 +34,5 @@ export const endpoints = {
   recommendedRepairs: "/recommended_repairs",
   loyaltyConfig: "/loyalty_config",
   categories: "/categories",
+  payments: "/payments",
 };
