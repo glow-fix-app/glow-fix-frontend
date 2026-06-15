@@ -6,7 +6,7 @@ import { usePayments } from "@/features/client/hooks/usePayments";
 import { ROUTE_PATHS } from "@/routes/paths";
 import { formatDateShort, formatCurrency } from "@/features/client/utils/formatters";
 
-const COLUMNS = ["Date", "Provider", "Service", "Amount", "Status", "Receipt"];
+const COLUMNS = ["Date", "Booking ID", "Provider", "Amount", "Payment", "Booking Status", "Receipt"];
 
 export default function BillingTransactionsTable() {
   const [page, setPage] = useState(1);
@@ -65,14 +65,20 @@ export default function BillingTransactionsTable() {
   };
 
   // Map API data to table format
-  const transactions = payments.map((p) => ({
-    id: p.id,
-    dateLabel: p.paid_at ? formatDateShort(p.paid_at) : "Pending",
-    provider: p.booking?.business?.businessName || "Service Provider",
-    service: "Booking Payment",
-    amount: p.amount,
-    status: p.status, // PAID, PENDING, CANCELLED
-  }));
+  const transactions = payments.map((p) => {
+    // Always use creation date per user request
+    const displayDate = p.created_at;
+    
+    return {
+      id: p.id,
+      dateLabel: displayDate ? formatDateShort(displayDate) : "Pending",
+      provider: p.booking?.business?.businessName || "GlowFix Service",
+      bookingId: p.booking_code || "BK-UNKNOWN",
+      amount: p.amount,
+      paymentStatus: p.status, // PAID, PENDING, CANCELLED
+      bookingStatus: p.booking_status || "UNKNOWN",
+    };
+  });
 
   return (
     <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
@@ -104,23 +110,24 @@ export default function BillingTransactionsTable() {
                     className="border-b border-gray-100 transition-colors last:border-b-0 hover:bg-surface-hover/80"
                   >
                     <td className="px-5 py-4 text-[13px] text-text-tertiary">{transaction.dateLabel}</td>
+                    <td className="px-5 py-4 text-[13px] font-medium text-text-primary">{transaction.bookingId}</td>
                     <td className="px-5 py-4 text-[14px] font-medium text-text-primary">
                       {transaction.provider}
                     </td>
-                    <td className="max-w-[220px] px-5 py-4 text-[13px] text-text-tertiary">
-                      {transaction.service}
-                    </td>
                     <td
-                      className={`px-5 py-4 text-[14px] font-medium ${transaction.status === "CANCELLED" ? "text-text-muted" : "text-text-primary"
+                      className={`px-5 py-4 text-[14px] font-medium ${transaction.paymentStatus === "CANCELLED" ? "text-text-muted" : "text-text-primary"
                         }`}
                     >
                       {formatCurrency(transaction.amount)}
                     </td>
                     <td className="px-5 py-4">
-                      <StatusBadge status={transaction.status} />
+                      <StatusBadge status={transaction.paymentStatus} />
+                    </td>
+                    <td className="px-5 py-4 text-[12px] font-medium uppercase tracking-wider text-text-tertiary">
+                      {transaction.bookingStatus}
                     </td>
                     <td className="px-5 py-4">
-                      {transaction.status === "PAID" ? (
+                      {transaction.paymentStatus === "PAID" ? (
                         <Link
                           to={ROUTE_PATHS.PAYMENT_RECEIPT(transaction.id)}
                           className="text-[13px] font-normal text-text-primary underline decoration-gray-300 underline-offset-4 transition-colors hover:decoration-gray-900"
@@ -145,17 +152,21 @@ export default function BillingTransactionsTable() {
                     <p className="text-[14px] font-medium text-text-primary">{transaction.provider}</p>
                     <p className="mt-0.5 text-[12px] text-text-tertiary">{transaction.dateLabel}</p>
                   </div>
-                  <StatusBadge status={transaction.status} />
+                  <div className="flex flex-col items-end gap-1">
+                    <StatusBadge status={transaction.paymentStatus} />
+                  </div>
                 </div>
-                <p className="text-[13px] text-text-tertiary">{transaction.service}</p>
+                <p className="text-[13px] font-medium text-text-primary">
+                  {transaction.bookingId} <span className="text-text-tertiary font-normal px-1">•</span> <span className="text-[11px] uppercase tracking-wider text-text-tertiary">{transaction.bookingStatus}</span>
+                </p>
                 <div className="flex items-center justify-between">
                   <p
-                    className={`text-[14px] font-medium ${transaction.status === "CANCELLED" ? "text-text-muted" : "text-text-primary"
+                    className={`text-[14px] font-medium ${transaction.paymentStatus === "CANCELLED" ? "text-text-muted" : "text-text-primary"
                       }`}
                   >
                     {formatCurrency(transaction.amount)}
                   </p>
-                  {transaction.status === "PAID" ? (
+                  {transaction.paymentStatus === "PAID" ? (
                     <Link
                       to={ROUTE_PATHS.PAYMENT_RECEIPT(transaction.id)}
                       className="text-[13px] font-normal text-text-primary underline decoration-gray-300 underline-offset-4"

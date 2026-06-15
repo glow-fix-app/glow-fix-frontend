@@ -76,6 +76,7 @@ export const clientApi = {
   billingSummary: () =>
     api.get(`/clients/me/stats`).then((res) => ({
       spentThisMonth: res.data.total_spent,
+      totalRefunded: res.data.total_refunded,
       bookings: res.data.total_bookings,
       loyaltyPointsEarned: res.data.loyalty_points,
       currency: "EGP", // Backend defaults to EGP

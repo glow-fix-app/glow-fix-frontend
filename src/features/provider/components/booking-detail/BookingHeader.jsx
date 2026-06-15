@@ -51,12 +51,11 @@ export default function BookingHeader({ id, status, paymentStatus, navigate, onU
             <ListBox.Item id="IN_PROGRESS" textValue="IN_PROGRESS" description={!isPaid ? "Payment required" : undefined} isDisabled={!isPaid}>In Progress</ListBox.Item>
             <ListBox.Item id="READY" textValue="READY" description={!isPaid ? "Payment required" : undefined} isDisabled={!isPaid}>Ready</ListBox.Item>
             <ListBox.Item id="COMPLETED" textValue="COMPLETED" description={!isPaid ? "Payment required" : undefined} isDisabled={!isPaid}>Completed</ListBox.Item>
-            {!["COMPLETED", "CANCELLED", "READY", "READY_FOR_PICKUP", "REJECTED"].includes(status) && (
-              status === "PENDING" ? (
-                <ListBox.Item id="REJECTED" textValue="REJECTED" className="text-danger" color="danger">Reject</ListBox.Item>
-              ) : (
-                <ListBox.Item id="CANCELLED" textValue="CANCELLED" className="text-danger" color="danger">Cancelled</ListBox.Item>
-              )
+            {!["COMPLETED", "CANCELLED", "READY", "READY_FOR_PICKUP", "REJECTED"].includes(status) && status === "PENDING" && (
+              <ListBox.Item id="REJECTED" textValue="REJECTED" className="text-danger" color="danger">Reject</ListBox.Item>
+            )}
+            {!["COMPLETED", "CANCELLED", "READY", "READY_FOR_PICKUP", "REJECTED", "PENDING"].includes(status) && (
+              <ListBox.Item id="CANCELLED" textValue="CANCELLED" className="text-danger" color="danger">Cancelled</ListBox.Item>
             )}
           </ListBox>
         </Select.Popover>

@@ -109,15 +109,7 @@ export default function ClientPaymentReceiptPage() {
             </p>
           </div>
 
-          <footer className="flex items-center justify-end border-t border-gray-100 px-6 py-6 sm:px-8">
-            <Link
-              to="/help"
-              className="inline-flex items-center gap-2 text-[13px] font-medium text-text-tertiary transition-colors hover:text-text-primary"
-            >
-              <InformationCircleIcon className="h-4 w-4" aria-hidden="true" />
-              Report an issue
-            </Link>
-          </footer>
+
         </article>
       )}
     </section>

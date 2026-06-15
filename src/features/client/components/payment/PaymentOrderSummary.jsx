@@ -39,7 +39,7 @@ export default function PaymentOrderSummary({
     <div className="sticky top-24 rounded-2xl border border-border-default bg-white p-6 space-y-5">
       <div>
         <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-text-muted mb-2">
-          Order
+          Provider
         </p>
         <h3 className="text-[18px] font-bold text-text-primary leading-tight">
           {providerName ?? "—"}

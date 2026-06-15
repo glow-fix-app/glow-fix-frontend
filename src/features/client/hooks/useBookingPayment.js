@@ -10,6 +10,7 @@ const DEFAULT_PLATFORM_FEE_RATE = 0.02;
 const num = (value) => Number(value) || 0;
 
 function computePlatformFee(booking, taxable) {
+  if (booking?.platformFee != null) return num(booking.platformFee);
   if (booking?.platform_fee != null) return num(booking.platform_fee);
   const rate = num(booking?.platform_fee_rate);
   return Math.round(taxable * (rate > 0 ? rate : DEFAULT_PLATFORM_FEE_RATE));

@@ -139,8 +139,12 @@ export default function ProviderServicesPage() {
   // --- SUBMISSIONS ---
 
   const onAssignSubmit = (data) => {
+    if (!chosenServiceId) {
+      newForm.setError("service_id", { type: "manual", message: "Please select a service" });
+      return;
+    }
     assignMutation.mutate({
-      service_id: data.service_id,
+      service_id: chosenServiceId,
       price: Math.round(Number(data.price)),
       average_duration: Math.round(Number(data.average_duration)),
       is_active: true,
@@ -303,7 +307,13 @@ export default function ProviderServicesPage() {
                       className="w-full" 
                       placeholder="Choose a service..."
                       selectedKeys={chosenServiceId ? [chosenServiceId] : []}
-                      onSelectionChange={(keys) => setChosenServiceId(Array.from(keys)[0])}
+                      onSelectionChange={(keys) => {
+                        let selected = Array.from(keys)[0];
+                        if (typeof selected === 'string') {
+                          selected = selected.replace(/^\$\.?|^\.\$/g, '');
+                        }
+                        setChosenServiceId(selected);
+                      }}
                     >
                       <Label className="block px-1 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">Select Service</Label>
                       <Select.Trigger className="h-12 w-full rounded-xl border border-gray-300 px-6 text-[14px] font-normal transition-all outline-none bg-white text-text-primary focus:border-brand-500 flex items-center justify-between cursor-pointer">
