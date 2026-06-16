@@ -25,7 +25,7 @@ const CARD_ELEMENT_OPTIONS = {
  * The parent hook (useBookingPayment) calls useElements() directly to obtain
  * the element reference — no props needed here.
  */
-export default function StripeCardForm() {
+export default function StripeCardForm({ onChange }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
@@ -50,7 +50,7 @@ export default function StripeCardForm() {
           Card information
         </label>
         <div className="rounded-xl border border-border-default bg-surface-subtle px-4 py-3.5 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-100 transition-all">
-          <CardElement options={CARD_ELEMENT_OPTIONS} />
+          <CardElement options={CARD_ELEMENT_OPTIONS} onChange={onChange} />
         </div>
         <p className="mt-3 text-[11px] text-text-muted flex items-center gap-1.5">
           <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>

@@ -84,6 +84,7 @@ export function useBookingPayment(bookingId) {
   const [useLoyaltyPoints, setUseLoyaltyPoints] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [paymentId, setPaymentId] = useState(null);
+  const [isCardComplete, setIsCardComplete] = useState(false);
 
   // These hooks work because useBookingPayment is called inside <Elements>
   const stripe = useStripe();
@@ -165,7 +166,7 @@ export function useBookingPayment(bookingId) {
 
   // Ready when Stripe SDK has loaded AND card element exists
   const stripeReady = Boolean(stripe && elements);
-  const canSubmit = Boolean(checkout?.canPay && stripeReady && !payMutation.isPending);
+  const canSubmit = Boolean(checkout?.canPay && stripeReady && isCardComplete && !payMutation.isPending);
 
   return {
     isLoading: bookingQuery.isLoading,
@@ -177,6 +178,7 @@ export function useBookingPayment(bookingId) {
     useLoyalty: useLoyaltyPoints,
     setUseLoyalty: setUseLoyaltyPoints,
     stripeReady,
+    setIsCardComplete,
     payMutation,
     canSubmit,
     submitPayment: (e) => {

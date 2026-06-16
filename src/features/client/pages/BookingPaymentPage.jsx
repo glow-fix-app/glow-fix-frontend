@@ -27,6 +27,7 @@ function BookingPaymentForm({ bookingId }) {
     useLoyalty,
     setUseLoyalty,
     stripeReady,
+    setIsCardComplete,
     payMutation,
     canSubmit,
     submitPayment,
@@ -83,7 +84,7 @@ function BookingPaymentForm({ bookingId }) {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           <div className="lg:col-span-3 space-y-8">
             {/* Stripe CardElement — the hook calls useElements() directly to access it */}
-            <StripeCardForm />
+            <StripeCardForm onChange={(e) => setIsCardComplete(e.complete)} />
 
             <div>
               <h2 className="text-[20px] font-semibold text-text-primary mb-4">Loyalty points</h2>
