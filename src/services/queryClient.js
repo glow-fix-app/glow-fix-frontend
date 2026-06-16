@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 
 export const queryKeys = {
+  admin: ["admin"],
   currentUser: ["currentUser"],
   users: (params) => ["users", params],
   clients: (params) => ["clients", params],

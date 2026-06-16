@@ -25,6 +25,31 @@ export default function StatusBadge({ status }) {
       text: "text-text-secondary",
       dot: "bg-gray-400",
     },
+    // Business statuses
+    pending_review: {
+      label: "Pending Review",
+      bg: "bg-transparent",
+      text: "text-text-secondary",
+      dot: "bg-amber-500 animate-pulse",
+    },
+    approved: {
+      label: "Approved",
+      bg: "bg-transparent",
+      text: "text-text-secondary",
+      dot: "bg-blue-500",
+    },
+    suspended: {
+      label: "Suspended",
+      bg: "bg-transparent",
+      text: "text-text-secondary",
+      dot: "bg-rose-500",
+    },
+    rejected: {
+      label: "Rejected",
+      bg: "bg-transparent",
+      text: "text-text-secondary",
+      dot: "bg-rose-500",
+    },
     // Booking statuses
     confirmed: {
       label: "Confirmed",
