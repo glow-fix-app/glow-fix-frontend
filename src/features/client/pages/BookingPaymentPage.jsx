@@ -1,17 +1,21 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { Spinner } from "@heroui/react";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { Elements } from "@stripe/react-stripe-js";
 import EmptyState from "@/components/feedback/EmptyState";
 import { ROUTE_PATHS } from "@/routes/paths";
-import { useBookingPayment } from "@/features/client/hooks/useBookingPayment";
-import PaymentCardForm from "@/features/client/components/payment/PaymentCardForm";
+import { useBookingPayment, getStripe } from "@/features/client/hooks/useBookingPayment";
+import StripeCardForm from "@/features/client/components/payment/StripeCardForm";
 import LoyaltyPointsCard from "@/features/client/components/payment/LoyaltyPointsCard";
 import PaymentSecurityNotice from "@/features/client/components/payment/PaymentSecurityNotice";
 import PaymentOrderSummary from "@/features/client/components/payment/PaymentOrderSummary";
 import PaymentSuccessView from "@/features/client/components/payment/PaymentSuccessView";
 
-export default function BookingPaymentPage() {
-  const { bookingId } = useParams();
+const STRIPE_ELEMENTS_OPTIONS = {
+  fonts: [{ cssSrc: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" }],
+};
+
+function BookingPaymentForm({ bookingId }) {
   const navigate = useNavigate();
   const {
     isLoading,
@@ -22,7 +26,8 @@ export default function BookingPaymentPage() {
     loyaltyBalance,
     useLoyalty,
     setUseLoyalty,
-    cardForm,
+    stripeRef,
+    elementsRef,
     payMutation,
     canSubmit,
     submitPayment,
@@ -78,7 +83,8 @@ export default function BookingPaymentPage() {
       <form onSubmit={submitPayment}>
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           <div className="lg:col-span-3 space-y-8">
-            <PaymentCardForm cardForm={cardForm} />
+            {/* Stripe CardElement — injects stripe/elements refs into the hook */}
+            <StripeCardForm stripeRef={stripeRef} elementsRef={elementsRef} />
 
             <div>
               <h2 className="text-[20px] font-semibold text-text-primary mb-4">Loyalty points</h2>
@@ -104,10 +110,21 @@ export default function BookingPaymentPage() {
               canSubmit={canSubmit}
               isSubmitting={payMutation.isPending}
               payError={payMutation.isError}
+              payErrorMessage={payMutation.error?.message}
             />
           </div>
         </div>
       </form>
     </section>
+  );
+}
+
+export default function BookingPaymentPage() {
+  const { bookingId } = useParams();
+
+  return (
+    <Elements stripe={getStripe()} options={STRIPE_ELEMENTS_OPTIONS}>
+      <BookingPaymentForm bookingId={bookingId} />
+    </Elements>
   );
 }

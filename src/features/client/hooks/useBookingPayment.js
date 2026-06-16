@@ -1,10 +1,9 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { loadStripe } from "@stripe/stripe-js";
 import { queryKeys } from "@/services/queryClient";
 import { clientApi } from "@/features/client/services/clientApi";
-import { useCardForm } from "@/features/client/hooks/useCardForm";
 import { useLoyalty } from "@/features/client/hooks/useLoyalty";
 
 const DEFAULT_PLATFORM_FEE_RATE = 0.02;
@@ -12,7 +11,7 @@ const num = (value) => Number(value) || 0;
 
 // Singleton promise — Stripe SDK is only loaded once
 let stripePromise = null;
-function getStripe() {
+export function getStripe() {
   if (!stripePromise) {
     stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
   }
@@ -68,7 +67,6 @@ function buildCheckout(booking, routerState, { balance, activeConfig }, applyLoy
     providerName: booking?.business?.businessName ?? null,
     scheduledLabel: booking?.scheduled_at ?? null,
     estimatedRepairTime: routerState?.estimatedRepairTime ?? null,
-    // expose the pending payment id for receipt linking
     pendingPayment: booking?.payment ?? null,
   };
 }
@@ -76,11 +74,13 @@ function buildCheckout(booking, routerState, { balance, activeConfig }, applyLoy
 export function useBookingPayment(bookingId) {
   const { state: routerState } = useLocation();
   const queryClient = useQueryClient();
-  const cardForm = useCardForm();
   const loyalty = useLoyalty();
   const [useLoyaltyPoints, setUseLoyaltyPoints] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [paymentId, setPaymentId] = useState(null);
+  // ref to the Stripe elements instance provided by <StripeCheckoutForm>
+  const stripeRef = useRef(null);
+  const elementsRef = useRef(null);
 
   const bookingQuery = useQuery({
     queryKey: [...queryKeys.bookings, bookingId, "pay"],
@@ -104,13 +104,15 @@ export function useBookingPayment(bookingId) {
   const payMutation = useMutation({
     mutationFn: async () => {
       const booking = bookingQuery.data;
-      if (!booking?.id) {
-        throw new Error("Booking not found.");
-      }
+      if (!booking?.id) throw new Error("Booking not found.");
+
+      const stripe = stripeRef.current;
+      const elements = elementsRef.current;
+      if (!stripe || !elements) throw new Error("Card form is not ready. Please wait a moment and try again.");
 
       const isRedeeming = useLoyaltyPoints && checkout.maxPointsAllowed > 0;
 
-      // Step 1 — Create PaymentIntent on backend, get client_secret
+      // Step 1 — Create PaymentIntent on backend → get client_secret
       const intentResponse = await clientApi.payBooking({
         booking_id: booking.id,
         payment_method: "CARD",
@@ -125,27 +127,10 @@ export function useBookingPayment(bookingId) {
         throw new Error("Payment intent creation failed. Please try again.");
       }
 
-      // Step 2 — Confirm the card charge with Stripe
-      const stripe = await getStripe();
-      if (!stripe) {
-        throw new Error("Stripe failed to initialize. Check your publishable key.");
-      }
-
-      // Build a card object from the manual form values
-      const [expMonth, expYear] = (cardForm.expiry.replace(/\s/g, "").split("/")).map(Number);
-      const cardNumber = cardForm.cardNumber.replace(/\s/g, "");
-
+      // Step 2 — Confirm card via Stripe Elements (CardElement)
       const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
-          card: {
-            number: cardNumber,
-            exp_month: expMonth,
-            exp_year: expYear < 100 ? 2000 + expYear : expYear,
-            cvc: cardForm.cvc,
-          },
-          billing_details: {
-            name: cardForm.cardName,
-          },
+          card: elements.getElement("card"),
         },
       });
 
@@ -157,7 +142,7 @@ export function useBookingPayment(bookingId) {
         throw new Error(`Unexpected payment status: ${paymentIntent?.status}`);
       }
 
-      // Step 3 — Tell backend the payment succeeded → sets booking status to CONFIRMED
+      // Step 3 — Finalize with backend → sets booking status ACCEPTED → CONFIRMED
       const result = await clientApi.confirmPayment(paymentIntentId);
       return result;
     },
@@ -169,9 +154,7 @@ export function useBookingPayment(bookingId) {
     },
   });
 
-  const canSubmit = Boolean(
-    checkout?.canPay && cardForm.isValid && !payMutation.isPending
-  );
+  const canSubmit = Boolean(checkout?.canPay && !payMutation.isPending);
 
   return {
     isLoading: bookingQuery.isLoading,
@@ -182,7 +165,8 @@ export function useBookingPayment(bookingId) {
     loyaltyBalance: loyalty.balance,
     useLoyalty: useLoyaltyPoints,
     setUseLoyalty: setUseLoyaltyPoints,
-    cardForm,
+    stripeRef,
+    elementsRef,
     payMutation,
     canSubmit,
     submitPayment: (e) => {
