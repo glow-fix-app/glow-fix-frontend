@@ -98,30 +98,36 @@ export default function ProviderPayoutsPage() {
           page={meta?.page || 1}
           totalPages={meta?.total_pages || 1}
           onPageChange={setPage}
-          renderRow={(payout) => (
-            <>
-              <TableCellText 
-                primary={`PO-${payout.id.slice(0, 8).toUpperCase()}`} 
-              />
-              <TableCellText 
-                primary={`EGP ${payout.amount.toLocaleString()}`} 
-                primaryClass="font-semibold text-gray-900"
-              />
-              <div className="flex items-center">
-                <StatusBadge status={payout.status} />
-              </div>
-              <TableCellText 
-                primary={`${payout.bookings?.length || 0} bookings`} 
-                secondary={payout.bookings?.map(b => b.booking_code).slice(0, 2).join(', ') + (payout.bookings?.length > 2 ? ', ...' : '')}
-              />
-              <TableCellText 
-                primary={payout.processed_at ? formatTableDate(payout.processed_at) : "-"} 
-              />
-              <TableCellText 
-                primary={formatTableDate(payout.created_at)} 
-              />
-            </>
-          )}
+          renderCell={(item, columnId) => {
+            switch (columnId) {
+              case "id":
+                return <TableCellText strong>PO-{item.id.slice(0, 8).toUpperCase()}</TableCellText>;
+              case "amount":
+                return <TableCellText strong className="text-gray-900">EGP {item.amount.toLocaleString()}</TableCellText>;
+              case "status":
+                return (
+                  <div className="flex items-center">
+                    <StatusBadge status={item.status} />
+                  </div>
+                );
+              case "bookings":
+                return (
+                  <div className="flex flex-col">
+                    <TableCellText>{item.bookings?.length || 0} bookings</TableCellText>
+                    <span className="text-[11px] text-gray-500">
+                      {item.bookings?.map(b => b.booking_code).slice(0, 2).join(', ')}
+                      {item.bookings?.length > 2 ? ', ...' : ''}
+                    </span>
+                  </div>
+                );
+              case "processed_at":
+                return <TableCellText>{item.processed_at ? formatTableDate(item.processed_at) : "—"}</TableCellText>;
+              case "created_at":
+                return <TableCellText>{formatTableDate(item.created_at)}</TableCellText>;
+              default:
+                return item[columnId];
+            }
+          }}
         />
       </div>
     </div>
