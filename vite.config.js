@@ -23,5 +23,45 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes("node_modules")) {
+              if (
+                id.includes("react") ||
+                id.includes("react-dom") ||
+                id.includes("react-router-dom")
+              ) {
+                return "vendor-react";
+              }
+              if (
+                id.includes("@heroui") ||
+                id.includes("framer-motion") ||
+                id.includes("tailwind") ||
+                id.includes("@heroicons")
+              ) {
+                return "vendor-ui";
+              }
+              if (
+                id.includes("@tanstack") ||
+                id.includes("axios") ||
+                id.includes("@reduxjs") ||
+                id.includes("react-redux")
+              ) {
+                return "vendor-data";
+              }
+              if (id.includes("leaflet") || id.includes("react-leaflet")) {
+                return "vendor-map";
+              }
+              if (id.includes("@stripe")) {
+                return "vendor-stripe";
+              }
+              return "vendor";
+            }
+          },
+        },
+      },
+    },
   };
 });

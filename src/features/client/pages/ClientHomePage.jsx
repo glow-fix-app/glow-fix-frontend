@@ -19,6 +19,7 @@ import {
   CheckBadgeIcon,
   ChatBubbleBottomCenterTextIcon
 } from "@heroicons/react/24/outline";
+import { ROLES } from "@/features/auth/constants/roles";
 
 export default function ClientHomePage() {
   const user = useSelector((state) => state.auth.user);
@@ -54,8 +55,14 @@ export default function ClientHomePage() {
     if (user) {
       const city = user?.client?.city || user?.city || user?.clientLocation?.city;
       if (city) setLocation(city);
+
+      if (user.role === ROLES.MANAGER || user.role === "manager") {
+        navigate("/provider");
+      } else if (user.role === ROLES.ADMIN || user.role === "admin") {
+        navigate("/admin");
+      }
     }
-  }, [user]);
+  }, [user, navigate]);
 
   // Fetch all services for autocomplete
   const { data: allServices } = useQuery({

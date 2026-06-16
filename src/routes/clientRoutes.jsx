@@ -29,13 +29,21 @@ export const clientChatRoutes = {
   ],
 };
 
-export const clientRoutes = {
+// Public client routes (landing, discover, search, details)
+export const publicClientRoutes = {
   element: <ClientLayout />,
   children: [
     { index: true, element: <ClientHomePage /> },
     { path: "providers/:providerId", element: <ProviderDetailPage /> },
     { path: "providers", element: <ClientDiscoverPage /> },
     { path: "browse", element: <ClientServiceSearchPage /> },
+  ],
+};
+
+// Protected client routes (checkout, bookings, payments, settings)
+export const protectedClientRoutes = {
+  element: <ClientLayout />,
+  children: [
     { path: "checkout/:providerId/confirmed", element: <BookingCheckoutConfirmedPage /> },
     { path: "checkout/:providerId", element: <BookingCheckoutPage /> },
     { path: "bookings", element: <ClientBookingsPage /> },
@@ -59,6 +67,7 @@ export const clientRoutes = {
     },
   ],
 };
+
 
 
 
