@@ -45,3 +45,4 @@ In development, the Vite proxy sends API traffic to the backend on the same brow
 - Tailwind CSS v4 and HeroUI
 - Redux Toolkit, React Query, Axios
 - React Router DOM, React Hook Form, Zod
+ 
