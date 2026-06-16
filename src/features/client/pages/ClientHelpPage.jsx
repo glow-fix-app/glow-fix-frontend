@@ -172,21 +172,22 @@ export default function ClientHelpPage() {
 
       {/* Contact Options */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Card 
-          isPressable 
-          onPress={() => navigate("/chat")}
-          className="border-none bg-white p-6 shadow-sm ring-1 ring-black/5 rounded-xl transition-colors hover:bg-surface-hover"
+        <button 
+          onClick={() => navigate("/chat?support=true")}
+          className="w-full text-left border-none bg-white p-6 shadow-sm ring-1 ring-black/5 rounded-xl transition-colors hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
         >
           <div className="flex w-full items-start gap-4 text-left">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gray-100">
               <ChatBubbleLeftRightIcon className="h-5 w-5 text-text-secondary" aria-hidden="true" />
             </span>
             <div className="min-w-0">
-              <p className="text-[15px] font-semibold text-text-primary">Live chat</p>
+              <p className="text-[15px] font-semibold text-text-primary">
+                Live chat
+              </p>
               <p className="mt-1 text-[12px] text-text-tertiary">Average reply under 5 min</p>
             </div>
           </div>
-        </Card>
+        </button>
 
         <a href="mailto:support@glowfix.app" className="block outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 rounded-xl">
           <Card className="h-full border-none bg-white p-6 shadow-sm ring-1 ring-black/5 rounded-xl transition-colors hover:bg-surface-hover">

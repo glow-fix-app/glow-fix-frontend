@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/services/queryClient";
 import { clientApi } from "@/features/client/services/clientApi";
@@ -7,8 +8,11 @@ import { useDiscoverLocation } from "./useDiscoverLocation";
 const NO_LOCATION = { id: "all", label: "All locations", lat: null, lng: null };
 
 export function useServiceSearch() {
-  const [query, setQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [searchParams] = useSearchParams();
+  const initialQuery = searchParams.get("q") || "";
+
+  const [query, setQuery] = useState(initialQuery);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const [category, setCategory] = useState("all");
   const [locationId, setLocationId] = useState(NO_LOCATION.id);
   const [locations, setLocations] = useState([

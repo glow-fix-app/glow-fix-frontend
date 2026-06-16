@@ -78,7 +78,7 @@ export default function ProviderHelpPage() {
     try {
       setIsStartingChat(true);
       const conversation = await chatApi.supportConversation();
-      await queryClient.invalidateQueries({ queryKey: queryKeys.chat });
+      queryClient.invalidateQueries({ queryKey: queryKeys.chat });
       navigate(`/provider/chat?id=${conversation.id}`);
     } catch (err) {
       console.error("Failed to start support chat:", err);

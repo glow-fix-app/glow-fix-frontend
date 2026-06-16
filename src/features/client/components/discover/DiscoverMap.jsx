@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useNavigate } from "react-router-dom";
+import { ROUTE_PATHS } from "@/routes/paths";
 
 const MARKER_COLOR = "#3b82f6";
 
@@ -40,6 +42,7 @@ function formatDistance(km) {
 }
 
 function ProviderMapPopup({ provider, onSelect }) {
+  const navigate = useNavigate();
   const distanceLabel = formatDistance(provider.distanceKm);
 
   return (
@@ -87,13 +90,13 @@ function ProviderMapPopup({ provider, onSelect }) {
         </div>
       </div>
 
-      {/* View in list — scrolls the card into view */}
+      {/* View details page */}
       <button
         type="button"
-        onClick={() => onSelect?.(provider.id)}
+        onClick={() => navigate(ROUTE_PATHS.PROVIDER_DETAIL(provider.id))}
         className="mt-3 w-full rounded-lg bg-brand-500 py-1.5 text-[12px] font-semibold text-white hover:bg-brand-600 transition-colors"
       >
-        View details ↓
+        View details &rarr;
       </button>
     </div>
   );
@@ -125,7 +128,7 @@ function ProviderMarker({ provider, isSelected, onSelect }) {
         },
       }}
     >
-      <Popup closeButton className="provider-map-popup">
+      <Popup closeButton className="provider-map-popup" autoPanPaddingTopLeft={[10, 60]}>
         <ProviderMapPopup provider={provider} onSelect={onSelect} />
       </Popup>
     </Marker>
@@ -215,7 +218,7 @@ export default function DiscoverMap({
   }
 
   return (
-    <div className="relative h-full min-h-[400px] w-full overflow-hidden rounded-xl ring-1 ring-black/5">
+    <div className="relative z-0 h-full min-h-[400px] w-full overflow-hidden rounded-xl ring-1 ring-black/5">
       <div className="absolute left-4 top-4 z-[1000] flex items-center gap-2 rounded-lg bg-white/95 px-3 py-1.5 shadow-md ring-1 ring-black/5 backdrop-blur-sm">
         <span className="relative flex h-2 w-2">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />

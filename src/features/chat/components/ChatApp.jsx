@@ -4,6 +4,9 @@ import { useSearchParams } from "react-router-dom";
 import { format, isToday, isYesterday } from "date-fns";
 import { useChat } from "@/features/chat/hooks/useChat";
 import { setActiveConversation } from "@/store/slices/chatSlice";
+import { chatApi } from "@/features/chat/services/chatApi";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/services/queryClient";
 import ChatSidebar from "./ChatSidebar";
 import ChatWindow from "./ChatWindow";
 
@@ -24,15 +27,33 @@ export default function ChatApp() {
   const conversationsData = useSelector((state) => state.chat.conversations);
   const selectedId = useSelector((state) => state.chat.activeConversationId);
 
+  const queryClient = useQueryClient();
+
   // Sync URL -> Redux on load or when URL changes
   useEffect(() => {
+    const isSupport = searchParams.get("support") === "true";
+    if (isSupport) {
+      const initSupport = async () => {
+        try {
+          const conv = await chatApi.supportConversation();
+          queryClient.invalidateQueries({ queryKey: queryKeys.chat });
+          setSearchParams({ id: conv.id }, { replace: true });
+        } catch (e) {
+          console.error("Failed to start support chat:", e);
+          setSearchParams({}, { replace: true });
+        }
+      };
+      initSupport();
+      return;
+    }
+
     const chatIdFromUrl = searchParams.get("id");
     if (chatIdFromUrl && chatIdFromUrl !== selectedId) {
       dispatch(setActiveConversation(chatIdFromUrl));
     } else if (!chatIdFromUrl && selectedId) {
       dispatch(setActiveConversation(null));
     }
-  }, [searchParams, selectedId, dispatch]);
+  }, [searchParams, selectedId, dispatch, setSearchParams, queryClient]);
 
   const handleSelect = (id) => {
     dispatch(setActiveConversation(id));
