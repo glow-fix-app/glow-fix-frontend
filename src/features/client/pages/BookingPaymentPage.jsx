@@ -17,6 +17,7 @@ export default function BookingPaymentPage() {
     isLoading,
     error,
     isSuccess,
+    paymentId,
     checkout,
     loyaltyBalance,
     useLoyalty,
@@ -53,7 +54,7 @@ export default function BookingPaymentPage() {
       <PaymentSuccessView
         bookingId={bookingId}
         total={checkout.total}
-        paymentId={checkout.pendingPayment?.id}
+        paymentId={paymentId}
         isPayingForRepairs={checkout.isPayingForRepairs}
       />
     );

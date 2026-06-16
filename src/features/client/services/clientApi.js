@@ -29,6 +29,9 @@ export const clientApi = {
       redeem_points: data.redeem_points,
       points_to_redeem: data.points_to_redeem,
     }).then((res) => res.data),
+  confirmPayment: (paymentIntentId) =>
+    api.post(`${endpoints.payments}/confirm`, { payment_intent_id: paymentIntentId }).then((res) => res.data),
+
   /**
    * uploadBookingImages — uploads image Files to Cloudflare R2 via the backend.
    * Returns an array of objects containing url and storageKey.
