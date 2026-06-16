@@ -1,7 +1,8 @@
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { loadStripe } from "@stripe/stripe-js";
+import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 import { queryKeys } from "@/services/queryClient";
 import { clientApi } from "@/features/client/services/clientApi";
 import { useLoyalty } from "@/features/client/hooks/useLoyalty";
@@ -9,7 +10,7 @@ import { useLoyalty } from "@/features/client/hooks/useLoyalty";
 const DEFAULT_PLATFORM_FEE_RATE = 0.02;
 const num = (value) => Number(value) || 0;
 
-// Singleton promise — Stripe SDK is only loaded once
+// Singleton promise — Stripe SDK only loaded once
 let stripePromise = null;
 export function getStripe() {
   if (!stripePromise) {
@@ -71,6 +72,11 @@ function buildCheckout(booking, routerState, { balance, activeConfig }, applyLoy
   };
 }
 
+/**
+ * Must be called inside a component wrapped by <Elements>.
+ * Calls useStripe() and useElements() directly so there are
+ * no ref timing issues.
+ */
 export function useBookingPayment(bookingId) {
   const { state: routerState } = useLocation();
   const queryClient = useQueryClient();
@@ -78,9 +84,10 @@ export function useBookingPayment(bookingId) {
   const [useLoyaltyPoints, setUseLoyaltyPoints] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [paymentId, setPaymentId] = useState(null);
-  // ref to the Stripe elements instance provided by <StripeCheckoutForm>
-  const stripeRef = useRef(null);
-  const elementsRef = useRef(null);
+
+  // These hooks work because useBookingPayment is called inside <Elements>
+  const stripe = useStripe();
+  const elements = useElements();
 
   const bookingQuery = useQuery({
     queryKey: [...queryKeys.bookings, bookingId, "pay"],
@@ -105,10 +112,11 @@ export function useBookingPayment(bookingId) {
     mutationFn: async () => {
       const booking = bookingQuery.data;
       if (!booking?.id) throw new Error("Booking not found.");
+      if (!stripe) throw new Error("Stripe has not loaded yet. Please wait a moment.");
+      if (!elements) throw new Error("Card form is not ready. Please wait a moment.");
 
-      const stripe = stripeRef.current;
-      const elements = elementsRef.current;
-      if (!stripe || !elements) throw new Error("Card form is not ready. Please wait a moment and try again.");
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) throw new Error("Please fill in your card details before proceeding.");
 
       const isRedeeming = useLoyaltyPoints && checkout.maxPointsAllowed > 0;
 
@@ -127,14 +135,15 @@ export function useBookingPayment(bookingId) {
         throw new Error("Payment intent creation failed. Please try again.");
       }
 
-      // Step 2 — Confirm card via Stripe Elements (CardElement)
+      // Step 2 — Confirm card charge via Stripe Elements (CardElement component ref)
       const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
-          card: elements.getElement("card"),
+          card: cardElement,
         },
       });
 
       if (stripeError) {
+        // stripeError.message contains the user-friendly Stripe error (e.g. "Your card was declined")
         throw new Error(stripeError.message || "Card payment failed. Please check your card details.");
       }
 
@@ -154,7 +163,9 @@ export function useBookingPayment(bookingId) {
     },
   });
 
-  const canSubmit = Boolean(checkout?.canPay && !payMutation.isPending);
+  // Ready when Stripe SDK has loaded AND card element exists
+  const stripeReady = Boolean(stripe && elements);
+  const canSubmit = Boolean(checkout?.canPay && stripeReady && !payMutation.isPending);
 
   return {
     isLoading: bookingQuery.isLoading,
@@ -165,8 +176,7 @@ export function useBookingPayment(bookingId) {
     loyaltyBalance: loyalty.balance,
     useLoyalty: useLoyaltyPoints,
     setUseLoyalty: setUseLoyaltyPoints,
-    stripeRef,
-    elementsRef,
+    stripeReady,
     payMutation,
     canSubmit,
     submitPayment: (e) => {

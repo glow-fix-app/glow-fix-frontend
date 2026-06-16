@@ -26,8 +26,7 @@ function BookingPaymentForm({ bookingId }) {
     loyaltyBalance,
     useLoyalty,
     setUseLoyalty,
-    stripeRef,
-    elementsRef,
+    stripeReady,
     payMutation,
     canSubmit,
     submitPayment,
@@ -83,8 +82,8 @@ function BookingPaymentForm({ bookingId }) {
       <form onSubmit={submitPayment}>
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           <div className="lg:col-span-3 space-y-8">
-            {/* Stripe CardElement — injects stripe/elements refs into the hook */}
-            <StripeCardForm stripeRef={stripeRef} elementsRef={elementsRef} />
+            {/* Stripe CardElement — the hook calls useElements() directly to access it */}
+            <StripeCardForm />
 
             <div>
               <h2 className="text-[20px] font-semibold text-text-primary mb-4">Loyalty points</h2>
@@ -111,6 +110,7 @@ function BookingPaymentForm({ bookingId }) {
               isSubmitting={payMutation.isPending}
               payError={payMutation.isError}
               payErrorMessage={payMutation.error?.message}
+              stripeReady={stripeReady}
             />
           </div>
         </div>

@@ -12,6 +12,7 @@ export default function PaymentOrderSummary({
   isSubmitting,
   payError,
   payErrorMessage,
+  stripeReady,
 }) {
   const {
     providerName,
@@ -98,6 +99,11 @@ export default function PaymentOrderSummary({
           <>
             <Spinner size="sm" color="white" />
             Processing…
+          </>
+        ) : !stripeReady ? (
+          <>
+            <Spinner size="sm" color="white" />
+            Loading Stripe…
           </>
         ) : (
           <>

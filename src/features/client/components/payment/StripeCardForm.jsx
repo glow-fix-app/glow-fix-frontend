@@ -1,5 +1,4 @@
-import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
-import { useEffect } from "react";
+import { CardElement } from "@stripe/react-stripe-js";
 
 const CARD_ELEMENT_OPTIONS = {
   style: {
@@ -22,24 +21,15 @@ const CARD_ELEMENT_OPTIONS = {
 
 /**
  * StripeCardForm
- * Renders a Stripe CardElement and injects stripe/elements refs
- * back into the parent hook so confirmCardPayment can access them.
+ * Renders the Stripe-hosted CardElement. Must be mounted inside <Elements>.
+ * The parent hook (useBookingPayment) calls useElements() directly to obtain
+ * the element reference — no props needed here.
  */
-export default function StripeCardForm({ stripeRef, elementsRef }) {
-  const stripe = useStripe();
-  const elements = useElements();
-
-  // Inject the stripe/elements instances into the parent hook's refs
-  useEffect(() => {
-    stripeRef.current = stripe;
-    elementsRef.current = elements;
-  }, [stripe, elements, stripeRef, elementsRef]);
-
+export default function StripeCardForm() {
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
         <h2 className="text-[20px] font-semibold text-text-primary">Card details</h2>
-        {/* Card brand icons */}
         <div className="flex items-center gap-1.5">
           {["Visa", "MC", "Amex"].map((brand) => (
             <span
