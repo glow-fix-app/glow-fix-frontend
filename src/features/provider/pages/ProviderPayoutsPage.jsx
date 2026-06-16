@@ -125,10 +125,10 @@ export default function ProviderPayoutsPage() {
               case "created_at":
                 return <TableCellText>{formatTableDate(item.created_at)}</TableCellText>;
               default:
-                return item[columnId];
+                const val = item[columnId];
+                return typeof val === 'object' ? JSON.stringify(val) : val;
             }
           }}
-        />
       </div>
     </div>
   );
