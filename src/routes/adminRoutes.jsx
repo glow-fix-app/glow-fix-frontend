@@ -10,6 +10,9 @@ import AdminReviewsPage from "@/features/admin/pages/AdminReviewsPage";
 import AdminPaymentsPage from "@/features/admin/pages/AdminPaymentsPage";
 import AdminNotificationsPage from "@/features/admin/pages/AdminNotificationsPage";
 import AdminChatPage from "@/features/admin/pages/AdminChatPage";
+import AdminProviderDetailPage from "@/features/admin/pages/AdminProviderDetailPage";
+import AdminClientDetailPage from "@/features/admin/pages/AdminClientDetailPage";
+import AdminUserDetailPage from "@/features/admin/pages/AdminUserDetailPage";
 
 export const adminRoutes = {
   path: "/admin",
@@ -17,8 +20,11 @@ export const adminRoutes = {
   children: [
     { index: true, element: <AdminDashboardPage /> },
     { path: "users", element: <AdminUsersPage /> },
+    { path: "users/:userId", element: <AdminUserDetailPage /> },
     { path: "providers", element: <AdminProvidersPage /> },
+    { path: "providers/:businessId", element: <AdminProviderDetailPage /> },
     { path: "clients", element: <AdminClientsPage /> },
+    { path: "clients/:clientId", element: <AdminClientDetailPage /> },
     { path: "bookings", element: <AdminBookingsPage /> },
     { path: "analytics", element: <AdminAnalyticsPage /> },
     { path: "settings", element: <AdminSettingsPage /> },

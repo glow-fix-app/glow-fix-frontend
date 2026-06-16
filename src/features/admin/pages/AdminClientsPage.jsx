@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { EmptyState } from "@heroui/react";
 
 import DashboardTable, {
@@ -11,12 +12,17 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useClients } from "@/features/admin/hooks/useClients";
 import { getApiErrorMessage } from "@/services/apiResponse";
 
+import StatCard from "@/components/dashboard/StatCard";
+import { useDashboardStats } from "@/features/admin/hooks/useAdminDashboard";
+import { UserGroupIcon, UserPlusIcon, ChartBarIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
+
 const COLUMNS = [
   { id: "customer", name: "Customer", isRowHeader: true },
   { id: "email", name: "Email" },
   { id: "phone", name: "Phone", hideBelow: "md" },
   { id: "registered", name: "Registered" },
   { id: "bookings", name: "Bookings", align: "center" },
+  { id: "spent", name: "Spent", align: "center" },
   { id: "lastBooking", name: "Last Booking", hideBelow: "lg" },
   { id: "status", name: "Status" },
   { id: "actions", name: "", align: "right" },
@@ -25,8 +31,10 @@ const COLUMNS = [
 const ROWS_PER_PAGE = 8;
 
 export default function AdminClientsPage() {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const { data: response, isLoading, isError, error } = useClients({ page, limit: ROWS_PER_PAGE });
+  const { data: stats } = useDashboardStats();
 
   const clients = response?.data || [];
   const meta = response?.meta;
@@ -35,13 +43,17 @@ export default function AdminClientsPage() {
     switch (columnId) {
       case "customer":
         return (
-          <div className="flex min-w-[10rem] items-center gap-3">
+          <div className="flex min-w-[12rem] items-center gap-3">
             <UserAvatar
-              user={{ fullName: item.name }}
+              user={{ fullName: item.full_name }}
               className="h-9 w-9 shrink-0 text-xs font-medium"
-              bg="bg-surface-hover text-text-secondary border border-border-default"
+              bg="bg-brand-50 text-brand-500 border border-brand-100"
             />
-            <TableCellText strong>{item.name}</TableCellText>
+            <div className="flex flex-col">
+              <TableCellText strong className="text-[14px]">
+                {item.full_name}
+              </TableCellText>
+            </div>
           </div>
         );
       case "email":
@@ -50,30 +62,36 @@ export default function AdminClientsPage() {
         return <TableCellText muted>{item.phone || "—"}</TableCellText>;
       case "registered":
         return (
-          <TableCellText>{formatTableDate(item.registrationDate)}</TableCellText>
+          <TableCellText muted>{formatTableDate(item.created_at)}</TableCellText>
         );
       case "bookings":
         return (
           <TableCellText strong className="tabular-nums">
-            {item.totalBookings ?? 0}
+            {item.total_bookings > 0 ? item.total_bookings : "—"}
+          </TableCellText>
+        );
+      case "spent":
+        return (
+          <TableCellText muted className="tabular-nums">
+            {item.total_spent > 0 ? `$${item.total_spent}` : "—"}
           </TableCellText>
         );
       case "lastBooking":
         return (
-          <TableCellText>{formatTableDate(item.lastBookingDate)}</TableCellText>
+          <TableCellText muted>{item.last_booking_date ? formatTableDate(item.last_booking_date) : "—"}</TableCellText>
         );
       case "status":
-        return <StatusBadge status={item.status} />;
+        return <StatusBadge status={item.is_active ? "Active" : "Inactive"} />;
       case "actions":
         return (
           <TableActionsMenu
-            ariaLabel={`Actions for ${item.name}`}
+            ariaLabel={`Actions for ${item.full_name}`}
             items={[
-              { key: "view", label: "View Details" },
+              { key: "view", label: "View Details", onClick: () => navigate(`/admin/clients/${item.id}`) },
               { key: "edit", label: "Edit Client" },
               {
                 key: "deactivate",
-                label: item.status === "Active" ? "Deactivate" : "Activate",
+                label: item.is_active ? "Deactivate" : "Activate",
                 variant: "danger",
               },
             ]}
@@ -103,21 +121,49 @@ export default function AdminClientsPage() {
   }
 
   return (
-    <DashboardTable
-      columns={COLUMNS}
-      data={tableData}
-      isLoading={isLoading}
-      page={page}
-      rowsPerPage={ROWS_PER_PAGE}
-      totalItems={meta?.total}
-      totalPages={meta?.totalPages}
-      onPageChange={setPage}
-      renderCell={renderCell}
-      emptyTitle="No clients found"
-      emptyDescription="Registered customers will appear here."
-      ariaLabel="Clients table"
-      minWidth="min-w-[56rem]"
-      serverSide
-    />
+    <div className="space-y-6">
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Total Customers"
+          value={stats?.total_clients ?? "—"}
+          icon={<UserGroupIcon className="w-5 h-5 text-gray-500" />}
+        />
+        <StatCard
+          title="New Users Today"
+          value={stats?.new_users_today ?? "—"}
+          icon={<UserPlusIcon className="w-5 h-5 text-blue-500" />}
+        />
+        <StatCard
+          title="Total Users"
+          value={stats?.total_users ?? "—"}
+          icon={<ChartBarIcon className="w-5 h-5 text-amber-500" />}
+        />
+        <StatCard
+          title="Active Accounts"
+          value={stats?.total_clients ?? "—"} // Assuming most are active, or just showing total_clients again
+          icon={<CheckCircleIcon className="w-5 h-5 text-emerald-500" />}
+        />
+      </div>
+
+      {/* Table */}
+      <DashboardTable
+        columns={COLUMNS}
+        data={tableData}
+        isLoading={isLoading}
+        page={page}
+        rowsPerPage={ROWS_PER_PAGE}
+        totalItems={meta?.total}
+        totalPages={meta?.total_pages}
+        onPageChange={setPage}
+        renderCell={renderCell}
+        emptyTitle="No customers found"
+        emptyDescription="Registered customers will appear here."
+        ariaLabel="Customers table"
+        minWidth="min-w-[56rem]"
+        serverSide
+        onRowAction={(id) => navigate(`/admin/clients/${id}`)}
+      />
+    </div>
   );
 }
