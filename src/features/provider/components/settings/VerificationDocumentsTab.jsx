@@ -23,6 +23,13 @@ export default function VerificationDocumentsTab() {
     queryFn: providerApi.getDocuments,
   });
 
+  const availableDocumentTypes = DOCUMENT_TYPES.filter(type => {
+    const existing = documents.find(d => d.type === type.key);
+    if (!existing) return true;
+    const ctx = existing.status?.context || "PENDING_REVIEW";
+    return ctx === "REJECTED"; // Only allow re-upload if rejected
+  });
+
   const uploadMutation = useMutation({
     mutationFn: ({ file, type }) => providerApi.uploadDocument(file, type),
     onSuccess: () => {
@@ -103,8 +110,9 @@ export default function VerificationDocumentsTab() {
             <p className="text-[13px] text-text-secondary mt-1">Upload required documents to verify your business and unlock payouts.</p>
           </div>
           <Button 
-            className="h-9 rounded-lg bg-brand-500 px-6 text-[12px] font-semibold text-white transition-all hover:bg-brand-600 cursor-pointer"
+            className="h-9 rounded-lg bg-brand-500 px-6 text-[12px] font-semibold text-white transition-all hover:bg-brand-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             onPress={() => setIsUploadModalOpen(true)}
+            isDisabled={availableDocumentTypes.length === 0}
             startContent={<DocumentTextIcon className="w-4 h-4" />}
           >
             + Upload Document
@@ -172,7 +180,7 @@ export default function VerificationDocumentsTab() {
                     </Select.Trigger>
                     <Select.Popover className="bg-white border border-gray-200 rounded-xl shadow-xl p-1 z-[9999]">
                       <ListBox>
-                        {DOCUMENT_TYPES.map((type) => (
+                        {availableDocumentTypes.map((type) => (
                           <ListBox.Item 
                             key={type.key} 
                             id={type.key} 
