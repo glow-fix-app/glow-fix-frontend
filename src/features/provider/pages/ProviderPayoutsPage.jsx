@@ -129,6 +129,7 @@ export default function ProviderPayoutsPage() {
                 return typeof val === 'object' ? JSON.stringify(val) : val;
             }
           }}
+        />
       </div>
     </div>
   );
